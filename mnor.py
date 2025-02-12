@@ -8,8 +8,7 @@ import re
 from datetime import datetime, timedelta
 from io import BytesIO
 from typing import Dict, List, Optional
-from urllib.parse import quote, parse
-
+from urllib.parse import quote, urlparse
 # Third-party imports
 import aiohttp
 import numpy as np
@@ -35,8 +34,15 @@ from telegram.ext import (
 
 # Logging
 import logging
-
 import urllib
+import requests
+from datetime import datetime
+import pytz
+from typing import Dict, List
+import json
+import aiohttp
+
+
 
 LEBANON_TZ = pytz.timezone('Asia/Beirut')
 DOG_API = "https://dog.ceo/api/breeds/image/random"
@@ -73,12 +79,6 @@ OVERLAYS = {
 }
 
 SNAKE_API = "https://api.unsplash.com/photos/random?query=snake&client_id=YOUR_UNSPLASH_API_KEY"
-
-
-IMGFLIP_USERNAME = 'IMGFLIP_USERNAME'
-IMGFLIP_PASSWORD = 'IMGFLIP_PASSWORD'
-MISTRAL_API_KEY = 'MISTRAL_API_KEY'
-
 
 
 
@@ -308,14 +308,10 @@ MEME_TEMPLATES = {
 }
 
 
-
-
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-
-
 
 
 
@@ -1752,12 +1748,271 @@ async def recursive_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return None
 
 
+
+AUTHORIZED_USERS = {'yaseen52', 'Mahmoud_kok', 'osama_coooooll'}
+INSULTS_FILE = 'insults.txt'
+COUNTER_FILE = 'insult_counter.json'
+
+def load_insults():
+    """Load insults from file"""
+    try:
+        with open(INSULTS_FILE, 'r', encoding='utf-8') as file:
+            return set(line.strip().lower() for line in file)
+    except FileNotFoundError:
+        return set()
+
+def save_insult(word):
+    """Save new insult to file"""
+    with open(INSULTS_FILE, 'a', encoding='utf-8') as file:
+        file.write(f'{word}\n')
+
+def load_counter():
+    """Load insult counter from file"""
+    try:
+        with open(COUNTER_FILE, 'r', encoding='utf-8') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return {}
+
+def save_counter(counter):
+    """Save insult counter to file"""
+    with open(COUNTER_FILE, 'w', encoding='utf-8') as file:
+        json.dump(counter, file, ensure_ascii=False, indent=2)
+
+async def add_insult(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Command handler to add new insult words to the dataset"""
+    user = update.effective_user.username
+    
+    if user not in AUTHORIZED_USERS:
+        await update.message.reply_text("You are not authorized to use this command.")
+        return
+    
+    if not context.args:
+        await update.message.reply_text("Please provide a word to add to the insults list.")
+        return
+    
+    word = ' '.join(context.args).lower()
+    insults = load_insults()
+    
+    if word in insults:
+        await update.message.reply_text("This word is already in the list.")
+        return
+    
+    save_insult(word)
+    await update.message.reply_text(f"Added '{word}' to the insults list.")
+
+async def check_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Message handler to check for insults"""
+    if not update.message or not update.message.text:
+        return
+    
+    message_text = update.message.text.lower()
+    insults = load_insults()
+    
+    # Check if message contains any insult
+    for insult in insults:
+        if insult in message_text:
+            # Update counter
+            username = update.effective_user.username or "unknown"
+            counter = load_counter()
+            counter[username] = counter.get(username, 0) + 1
+            current_count = counter[username]
+            save_counter(counter)
+            
+            # Delete the message
+            await update.message.delete()
+            
+            # Send warning message with current count
+            user = update.effective_user.mention_html()
+            warning = f"⚠️ {user}, المُسْلِمُ مَنْ سَلِمَ المُسْلِمُونَ مِنْ لِسَانِهِ وَيَدِهِ رواه البخاري"
+            warning += f"\nلقد بلغت شتائمك الـ ({current_count})! شتائم"
+            warning += "\nهل ترضى لحسناتك أن تنقص لنطق ببعض الكلام الغير مفيد؟"
+            warning += "\nاستغفر الله العظيم ، استغفر الله العظيم، استغفر الله العظيم"
+            
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=warning,
+                parse_mode='HTML'
+            )
+            return
+
+async def show_leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Command handler to show the insult counter leaderboard"""
+    counter = load_counter()
+    
+    if not counter:
+        await update.message.reply_text("No insults recorded yet.")
+        return
+    
+    # Sort users by insult count in descending order
+    sorted_users = sorted(counter.items(), key=lambda x: x[1], reverse=True)
+    
+    # Create leaderboard message
+    leaderboard = "🏆 Insult Leaderboard:\n\n"
+    for i, (username, count) in enumerate(sorted_users, 1):
+        leaderboard += f"{i}. {username}: {count} insults\n"
+    
+    await update.message.reply_text(leaderboard)
+             
+
+async def get_prayer_times(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Get prayer times for a specific city"""
+    if not context.args:
+        await update.message.reply_text("Please provide a city name. Example: /prayer London")
+        return
+    
+    city = ' '.join(context.args)
+    
+    # Using Aladhan API
+    url = f"http://api.aladhan.com/v1/timingsByCity?city={city}&country=&method=2"
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                data = await response.json()
+                timings = data['data']['timings']
+                
+                prayer_text = f"Prayer Times for {city}:\n\n" \
+                            f"Fajr: {timings['Fajr']}\n" \
+                            f"Sunrise: {timings['Sunrise']}\n" \
+                            f"Dhuhr: {timings['Dhuhr']}\n" \
+                            f"Asr: {timings['Asr']}\n" \
+                            f"Maghrib: {timings['Maghrib']}\n" \
+                            f"Isha: {timings['Isha']}"
+                
+                await update.message.reply_text(prayer_text)
+            else:
+                await update.message.reply_text("Sorry, couldn't fetch prayer times. Please check the city name.")
+
+
+async def get_random_quran(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Get a random Quran verse with translation"""
+    # Generate random surah (1-114) and ayah numbers
+    surah = random.randint(1, 114)
+    
+    # Get the surah details first to know max ayahs
+    url = f"http://api.alquran.cloud/v1/surah/{surah}"
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                data = await response.json()
+                max_ayahs = data['data']['numberOfAyahs']
+                ayah = random.randint(1, max_ayahs)
+                
+                # Now get the specific ayah with translation
+                verse_url = f"http://api.alquran.cloud/v1/ayah/{surah}:{ayah}/editions/quran-simple,en.sahih"
+                
+                async with session.get(verse_url) as verse_response:
+                    if verse_response.status == 200:
+                        verse_data = await verse_response.json()
+                        arabic = verse_data['data'][0]['text']
+                        english = verse_data['data'][1]['text']
+                        
+                        quran_text = f"Surah {surah}, Ayah {ayah}:\n\n" \
+                                   f"{arabic}\n\n" \
+                                   f"Translation:\n{english}"
+                        
+                        await update.message.reply_text(quran_text)
+                    else:
+                        await update.message.reply_text("Sorry, couldn't fetch the verse at the moment.")
+            else:
+                await update.message.reply_text("Sorry, couldn't fetch Quran verse at the moment.")
+
+async def get_islamic_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Get current Islamic (Hijri) date"""
+    url = "http://api.aladhan.com/v1/gToH"
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                data = await response.json()
+                hijri = data['data']['hijri']
+                
+                date_text = f"Islamic Date:\n\n" \
+                           f"{hijri['day']} {hijri['month']['en']} {hijri['year']} AH\n" \
+                           f"({hijri['designation']['expanded']})"
+                
+                await update.message.reply_text(date_text)
+            else:
+                await update.message.reply_text("Sorry, couldn't fetch Islamic date at the moment.")
+
+async def get_ramadan_timing(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Get Ramadan timing for a specific city"""
+    if not context.args:
+        await update.message.reply_text("Please provide a city name. Example: /ramadan London")
+        return
+    
+    city = ' '.join(context.args)
+    
+    # Using Aladhan API
+    url = f"http://api.aladhan.com/v1/timingsByCity?city={city}&country=&method=2"
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                data = await response.json()
+                timings = data['data']['timings']
+                
+                ramadan_text = f"Ramadan Timings for {city}:\n\n" \
+                              f"Suhoor ends (Fajr): {timings['Fajr']}\n" \
+                              f"Iftar time (Maghrib): {timings['Maghrib']}"
+                
+                await update.message.reply_text(ramadan_text)
+            else:
+                await update.message.reply_text("Sorry, couldn't fetch Ramadan timings. Please check the city name.")
+
+async def get_random_hadith(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send a random hadith from the collection using free API"""
+    async with aiohttp.ClientSession() as session:
+        # Using alternative API
+        url = "https://api.hadith.gading.dev/books/bukhari?range=1-300"  # Limiting range for better performance
+        
+        try:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    if data.get('data', {}).get('hadiths'):
+                        # Get a random hadith from the collection
+                        hadith = random.choice(data['data']['hadiths'])
+                        
+                        hadith_text = "📖 Hadith of the Day\n\n"
+                        hadith_text += f"Collection: Sahih Bukhari\n"
+                        hadith_text += f"Hadith Number: {hadith.get('number', 'N/A')}\n\n"
+                        
+                        # Add Arabic text if available
+                        if hadith.get('arab'):
+                            hadith_text += f"Arabic:\n{hadith['arab']}\n\n"
+                        
+                        # Add English translation
+                        if hadith.get('id'):
+                            hadith_text += f"Translation:\n{hadith['id']}"
+                        
+                        await update.message.reply_text(hadith_text)
+                    else:
+                        await update.message.reply_text("Sorry, couldn't fetch a hadith. Please try again.")
+                else:
+                    await update.message.reply_text("Sorry, the hadith service is currently unavailable. Please try again later.")
+        except Exception as e:
+            await update.message.reply_text("An error occurred while fetching the hadith. Please try again later.")
+            print(f"Error in get_random_hadith: {str(e)}")
+
 if __name__ == '__main__':
     # Replace 'YOUR_TOKEN' with your bot's API token from Telegram
-    application = ApplicationBuilder().token('TELEGRAM_BOT_TOKEN').build()
+    application = ApplicationBuilder().token('TOKEN').build()
 
     # Command handlers
     application.add_handler(CommandHandler('start', start))
+    application.add_handler(CommandHandler('addinsult', add_insult))
+    application.add_handler(CommandHandler('leaderboard', show_leaderboard))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_message))
+    
+    application.add_handler(CommandHandler('prayer', get_prayer_times))
+    application.add_handler(CommandHandler('quran', get_random_quran))
+    application.add_handler(CommandHandler('hijri', get_islamic_date))
+    application.add_handler(CommandHandler('ramadan', get_ramadan_timing))
+    application.add_handler(CommandHandler('hadith', get_random_hadith))
     application.add_handler(CommandHandler('makememe', makememe))
     application.add_handler(CommandHandler('templates', templates))  # Add templates command
 

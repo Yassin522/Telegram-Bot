@@ -1,2 +1,4 @@
 # Environment variables
 .env
+insult_counter.json
+insults.txt
