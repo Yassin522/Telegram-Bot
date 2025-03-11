@@ -1801,6 +1801,7 @@ async def add_insult(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_insult(word)
     await update.message.reply_text(f"Added '{word}' to the insults list.")
 
+
 async def check_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Message handler to check for insults"""
     if not update.message or not update.message.text:
@@ -1810,31 +1811,48 @@ async def check_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     insults = load_insults()
     
     # Check if message contains any insult
+    found_insults = False
+    sanitized_message = update.message.text  # Start with the original message
     for insult in insults:
         if insult in message_text:
-            # Update counter
-            username = update.effective_user.username or "unknown"
-            counter = load_counter()
-            counter[username] = counter.get(username, 0) + 1
-            current_count = counter[username]
-            save_counter(counter)
-            
-            # Delete the message
-            await update.message.delete()
-            
-            # Send warning message with current count
-            user = update.effective_user.mention_html()
-            warning = f"⚠️ {user}, المُسْلِمُ مَنْ سَلِمَ المُسْلِمُونَ مِنْ لِسَانِهِ وَيَدِهِ رواه البخاري"
-            warning += f"\nلقد بلغت شتائمك الـ ({current_count})! شتائم"
-            warning += "\nهل ترضى لحسناتك أن تنقص لنطق ببعض الكلام الغير مفيد؟"
-            warning += "\nاستغفر الله العظيم ، استغفر الله العظيم، استغفر الله العظيم"
-            
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=warning,
-                parse_mode='HTML'
+            found_insults = True
+            # Replace the bad word in the original message with asterisks
+            sanitized_message = sanitized_message.replace(
+                insult,
+                '*' * len(insult)  # Replace with same number of asterisks as the length of the bad word
             )
-            return
+    
+    if found_insults:
+        # Update counter
+        username = update.effective_user.username or "unknown"
+        counter = load_counter()
+        counter[username] = counter.get(username, 0) + 1
+        current_count = counter[username]
+        save_counter(counter)
+        
+        # Delete the original message
+        await update.message.delete()
+        
+        # Send warning message with current count
+        user = update.effective_user.mention_html()
+        warning = f"⚠️ {user}, المُسْلِمُ مَنْ سَلِمَ المُسْلِمُونَ مِنْ لِسَانِهِ وَيَدِهِ رواه البخاري"
+        warning += f"\nلقد بلغت شتائمك الـ ({current_count})! شتائم"
+        warning += "\nهل ترضى لحسناتك أن تنقص لنطق ببعض الكلام الغير مفيد؟"
+        warning += "\nاستغفر الله العظيم ، استغفر الله العظيم، استغفر الله العظيم"
+        
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=warning,
+            parse_mode='HTML'
+        )
+        
+        # Send the sanitized message (without bad words)
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=sanitized_message,
+            parse_mode='HTML'
+        )
+        return
 
 async def show_leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Command handler to show the insult counter leaderboard"""
