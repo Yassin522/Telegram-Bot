@@ -1807,22 +1807,23 @@ async def check_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
     
-    message_text = update.message.text.lower()
-    insults = load_insults()
+    message_text = update.message.text  # Original message text
+    lower_message_text = message_text.lower()  # Lowercase version for case-insensitive matching
+    insults = load_insults()  # Load the list of bad words
     
-    # Check if message contains any insult
-    found_insults = False
-    sanitized_message = update.message.text  # Start with the original message
-    for insult in insults:
-        if insult in message_text:
-            found_insults = True
-            # Replace the bad word in the original message with asterisks
-            sanitized_message = sanitized_message.replace(
-                insult,
-                '*' * len(insult)  # Replace with same number of asterisks as the length of the bad word
-            )
+    # Compile a regex pattern to match bad words as whole words
+    insult_pattern = re.compile(r'\b(' + '|'.join(map(re.escape, insults)) + r')\b', flags=re.IGNORECASE)
+    
+    # Find all bad words in the message
+    found_insults = insult_pattern.findall(lower_message_text)
     
     if found_insults:
+        # Sanitize the message by replacing bad words with asterisks
+        sanitized_message = insult_pattern.sub(
+            lambda match: '*' * len(match.group()),  # Replace with same number of asterisks
+            message_text
+        )
+        
         # Update counter
         username = update.effective_user.username or "unknown"
         counter = load_counter()
@@ -1852,7 +1853,6 @@ async def check_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text=sanitized_message,
             parse_mode='HTML'
         )
-        return
 
 async def show_leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Command handler to show the insult counter leaderboard"""
