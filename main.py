@@ -27,27 +27,24 @@ from handlers.utility_commands import (
 
 from handlers.api_commands import (
     get_random_dog, get_random_cat, get_random_fox, get_anime_quote,
-    get_pokemon, get_random_snake, get_random_joke, get_quote,
+    get_pokemon, get_random_joke, get_quote,
     get_activity, get_advice, get_trivia, check_trivia_answer,
     get_number_fact, analyze_name, get_random_user, get_iss_location,
-    get_random_recipe, mistral_chat, get_drum_photo, random_gif,
+    get_random_recipe, mistral_chat, random_gif,
     nasa_pic, useless_fact, crypto_price, chuck_norris, urban_dict,
-    color_palette, bored_activity, programming_quote, dog_breed
+    color_palette, bored_activity, programming_quote, dog_breed,
+    get_random_snake, get_random_word, get_drum_photo
 )
 
 from handlers.message_handlers import (
     respond_to_keywords, check_message, filter_inappropriate_words_handler,
-    add_keyword_response, add_insult, show_leaderboard, recursive_command
+    add_keyword_response, add_insult, show_leaderboard, recursive_command,
 )
 
 from handlers.meme_handlers import (
     makememe, templates, create_meme_custom, apply_filter,
     mardini_transform, text_to_speech, random_sticker
 )
-
-# Import additional handlers that need special setup
-from handlers.meme_handlers import mardini_transform
-from handlers.api_commands import get_random_word
 
 # Setup logging
 logging.basicConfig(
@@ -151,9 +148,10 @@ def setup_handlers(application):
     application.add_handler(CommandHandler('leaderboard', show_leaderboard))
     application.add_handler(CommandHandler('recursive', recursive_command))
     
+    
     # Message handlers (for text messages)
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, respond_to_keywords))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_message))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, respond_to_keywords))
     
     # Help command
     application.add_handler(CommandHandler('help', lambda u, c: u.message.reply_text(
@@ -209,6 +207,14 @@ API Commands:
 /nasa_pic - NASA picture of the day
 /crypto_price - Get cryptocurrency prices
 /chuck_norris - Get Chuck Norris facts
+
+Insult Management (Authorized Users Only):
+/addinsult <word> - Add a new insult to the list
+/removeinsult <word> - Remove an insult from the list
+/searchinsults <query> - Search for insults containing query
+/insultstats - Show statistics about the insults dataset
+/validateinsults - Validate the insults file for issues
+/leaderboard - Show insult counter leaderboard
 
 For more details about any command, use: /<command> help
 """

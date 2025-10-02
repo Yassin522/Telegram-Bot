@@ -9,8 +9,8 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from config import (
     DOG_API, CAT_API, FOX_API, ANIME_QUOTE_API, POKEMON_API,
-    JIKAN_API_BASE, WAIFU_API, APIS, SNAKE_IMAGES, SNAKE_MESSAGES,
-    DRUM_IMAGES, MISTRAL_API_KEY, GIPHY_API_KEY
+    JIKAN_API_BASE, WAIFU_API, APIS, MISTRAL_API_KEY, GIPHY_API_KEY,
+    UNSPLASH_ACCESS_KEY
 )
 import requests
 
@@ -87,17 +87,6 @@ async def get_pokemon(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await update.message.reply_text("Pokemon not found! Check the spelling or try a different one.")
 
-
-async def get_random_snake(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Send a random snake image"""
-    try:
-        snake_url = random.choice(SNAKE_IMAGES)
-        await update.message.reply_photo(snake_url)
-        
-        snake_message = random.choice(SNAKE_MESSAGES)
-        await update.message.reply_text(snake_message)
-    except Exception as e:
-        await update.message.reply_text("Sorry, couldn't fetch a snake image right now. Try again later! 🐍")
 
 
 async def get_random_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -320,6 +309,9 @@ async def mistral_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     prompt = ' '.join(context.args)
 
     try:
+        if not MISTRAL_API_KEY:
+            await update.message.reply_text("Mistral API key not configured!")
+            return
         url = "https://api.mistral.ai/v1/chat/completions"
         headers = {
             "Content-Type": "application/json",
@@ -348,35 +340,9 @@ async def mistral_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"An error occurred: {str(e)}")
 
 
-async def get_drum_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Get a drum photo"""
-    try:
-        # Send a "typing" action to show bot is working
-        await context.bot.send_chat_action(
-            chat_id=update.effective_chat.id,
-            action="upload_photo"
-        )
-        
-        # Use fallback drum images
-        selected_image = random.choice(DRUM_IMAGES)
-        
-        # Send the photo
-        await context.bot.send_photo(
-            chat_id=update.effective_chat.id,
-            photo=selected_image,
-            caption="🥁 Here's a drum photo for you!",
-            parse_mode='HTML'
-        )
-        
-    except Exception as e:
-        await update.message.reply_text(
-            "❌ An unexpected error occurred. Please try again."
-        )
-
-
 async def random_gif(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Fetch a random GIF based on search term"""
-    if GIPHY_API_KEY == "YOUR_GIPHY_API_KEY":
+    if not GIPHY_API_KEY:
         await update.message.reply_text("GIPHY API key not configured!")
         return
     
@@ -625,3 +591,81 @@ async def dog_breed(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await update.message.reply_text("❌ Could not fetch dog data!")
     except Exception as e:
         await update.message.reply_text("❌ Error fetching dog breed!")
+
+
+async def get_random_snake(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send a random snake image"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Using a snake image API
+            if not UNSPLASH_ACCESS_KEY:
+                await update.message.reply_text("Unsplash access key not configured!")
+                return
+            url = f"https://api.unsplash.com/photos/random?query=snake&client_id={UNSPLASH_ACCESS_KEY}"
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    image_url = data.get('urls', {}).get('regular')
+                    if image_url:
+                        await update.message.reply_photo(image_url)
+                        await update.message.reply_text("🐍 Hiss! Here's your random snake!")
+                    else:
+                        await update.message.reply_text("Sorry, couldn't fetch a snake image right now.")
+                else:
+                    await update.message.reply_text("Sorry, couldn't fetch a snake image right now.")
+    except Exception as e:
+        await update.message.reply_text("Sorry, couldn't fetch a snake image right now.")
+
+
+async def get_random_word(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Get a random word with definition"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Using WordsAPI for random word
+            url = "https://wordsapiv1.p.rapidapi.com/words/?random=true"
+            headers = {
+                "X-RapidAPI-Key": "DEMO_KEY",
+                "X-RapidAPI-Host": "wordsapiv1.p.rapidapi.com"
+            }
+            
+            async with session.get(url, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    word = data.get('word', 'Unknown')
+                    definitions = data.get('results', [])
+                    
+                    if definitions:
+                        definition = definitions[0].get('definition', 'No definition available')
+                        message = f"📚 **Random Word:** {word.title()}\n\n"
+                        message += f"**Definition:** {definition}"
+                        await update.message.reply_text(message, parse_mode='Markdown')
+                    else:
+                        await update.message.reply_text(f"📚 **Random Word:** {word.title()}\n\nNo definition available.")
+                else:
+                    await update.message.reply_text("Sorry, couldn't fetch a random word right now.")
+    except Exception as e:
+        await update.message.reply_text("Sorry, couldn't fetch a random word right now.")
+
+
+async def get_drum_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send a random drum photo"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Using Unsplash API for drum photos
+            if not UNSPLASH_ACCESS_KEY:
+                await update.message.reply_text("Unsplash access key not configured!")
+                return
+            url = f"https://api.unsplash.com/photos/random?query=drum&client_id={UNSPLASH_ACCESS_KEY}"
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    image_url = data.get('urls', {}).get('regular')
+                    if image_url:
+                        await update.message.reply_photo(image_url)
+                        await update.message.reply_text("🥁 Here's your drum photo!")
+                    else:
+                        await update.message.reply_text("Sorry, couldn't fetch a drum photo right now.")
+                else:
+                    await update.message.reply_text("Sorry, couldn't fetch a drum photo right now.")
+    except Exception as e:
+        await update.message.reply_text("Sorry, couldn't fetch a drum photo right now.")

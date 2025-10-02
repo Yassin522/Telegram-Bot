@@ -1,30 +1,37 @@
 """
-Configuration file for the Telegram Bot
+Configuration for the Telegram Bot. Values are loaded from environment variables.
+Use a `.env` file during development.
 """
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables from .env file if present
 load_dotenv()
 
-# Bot Configuration
-BOT_TOKEN = os.getenv('BOT_TOKEN', '7297818884:AAEv6mxY2xADpnTi2OY37Z04yUYJQVJexvM')
+def require_env(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise RuntimeError(f"Missing required environment variable: {name}")
+    return value
 
-# API Keys
-MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY', 'lsJBsXHPYReBOZSbfqmjd0AXNd1Z1whz')
-IMGFLIP_USERNAME = os.getenv('IMGFLIP_USERNAME', 'yassin52')
-IMGFLIP_PASSWORD = os.getenv('IMGFLIP_PASSWORD', '7Ealashemn3ndk')
-GIPHY_API_KEY = os.getenv('GIPHY_API_KEY', 'TlBJrLX2lAaeCEDx6ngZVdvoebbwKI1C')
+# Bot Configuration (required)
+BOT_TOKEN = require_env('BOT_TOKEN')
+
+# API Keys (some required by features that use them)
+MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY')
+IMGFLIP_USERNAME = os.getenv('IMGFLIP_USERNAME')
+IMGFLIP_PASSWORD = os.getenv('IMGFLIP_PASSWORD')
+GIPHY_API_KEY = os.getenv('GIPHY_API_KEY')
 
 # Optional API Keys
-UNSPLASH_ACCESS_KEY = os.getenv('UNSPLASH_ACCESS_KEY', 'YOUR_UNSPLASH_ACCESS_KEY')
-PEXELS_API_KEY = os.getenv('PEXELS_API_KEY', 'YOUR_PEXELS_API_KEY')
-NEWS_API_KEY = os.getenv('NEWS_API_KEY', 'YOUR_NEWS_API_KEY')
-OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY', 'YOUR_OPENWEATHER_API_KEY')
+UNSPLASH_ACCESS_KEY = os.getenv('UNSPLASH_ACCESS_KEY')
+PEXELS_API_KEY = os.getenv('PEXELS_API_KEY')
+NEWS_API_KEY = os.getenv('NEWS_API_KEY')
+OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
 
 # Bot Configuration
 LEBANON_TZ = os.getenv('LEBANON_TZ', 'Asia/Beirut')
-AUTHORIZED_USERS = set(os.getenv('AUTHORIZED_USERS', 'yaseen52,Mahmoud_kok,osama_coooooll').split(','))
+AUTHORIZED_USERS = set(filter(None, (os.getenv('AUTHORIZED_USERS', '').split(','))))
 
 # API Endpoints
 DOG_API = "https://dog.ceo/api/breeds/image/random"

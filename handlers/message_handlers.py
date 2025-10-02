@@ -3,6 +3,7 @@ Message handlers for the Telegram Bot
 """
 import asyncio
 import logging
+import re
 from telegram import Update
 from telegram.ext import ContextTypes
 from telegram.error import BadRequest
@@ -14,6 +15,24 @@ from config import AUTHORIZED_USERS
 logger = logging.getLogger(__name__)
 data_manager = DataManager()
 
+def normalize_arabic(text: str) -> str:
+    # Remove tatweel and punctuation
+    text = re.sub(r"[ـ.,!?]", "", text)
+    # Remove extra spaces
+    text = text.strip()
+    return text
+
+def build_insult_pattern(insult: str) -> re.Pattern:
+    """
+    Build a regex pattern that matches minor letter repetitions or tatweel,
+    but doesn't match words with extra letters.
+    """
+    insult_norm = normalize_arabic(insult)
+    # Repeat each character 1 or more times
+    insult_regex = ''.join([f"{re.escape(c)}+" for c in insult_norm])
+    # Add word boundaries
+    pattern = r'\b' + insult_regex + r'\b'
+    return re.compile(pattern)
 
 async def respond_to_keywords(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Message handler for keyword responses"""
@@ -25,55 +44,52 @@ async def respond_to_keywords(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def check_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Message handler to check for insults with improved detection"""
     if not update.message or not update.message.text:
         return
     
     message_text = update.message.text
     insults = data_manager.load_insults()
-    
     if not insults:
-        return  # No insults to check against
+        return
     
-    # Use word-by-word approach for better accuracy
     words = message_text.split()
     detected_words = []
     final_sanitized_words = []
-    
+
+    # Precompile patterns
+    insult_patterns = [build_insult_pattern(insult) for insult in insults]
+
     for word in words:
+        word_norm = normalize_arabic(word)
         word_detected = False
-        normalized_word = word.lower()
-        
-        for insult in insults:
-            if insult in normalized_word:
+
+        for pattern in insult_patterns:
+            if pattern.fullmatch(word_norm):
                 detected_words.append(word)
                 final_sanitized_words.append('*' * len(word))
                 word_detected = True
                 break
-        
+
         if not word_detected:
             final_sanitized_words.append(word)
     
-    # If insults were detected
     if detected_words:
         sanitized_message = ' '.join(final_sanitized_words)
-        
-        # Update counter
         username = update.effective_user.username or "unknown"
         current_count = data_manager.increment_counter(username)
         
-        # Delete the original message
         try:
             await update.message.delete()
         except BadRequest:
             logger.warning(f"Could not delete message: {update.message.message_id}")
         
-        # Send warning message with current count
         user = update.effective_user.mention_html()
-        warning = f"⚠️ {user}, المُسْلِمُ مَنْ سَلِمَ المُسْلِمُونَ مِنْ لِسَانِهِ وَيَدِهِ رواه البخاري"
-        warning += f"\nلقد بلغت شتائمك الـ ({current_count})! شتائم"
-        warning += "\nهل ترضى لحسناتك أن تنقص لنطق ببعض الكلام الغير مفيد؟"
-        warning += "\nاستغفر الله العظيم ، استغفر الله العظيم، استغفر الله العظيم"
+        warning = (
+            f"⚠️ {user}, المُسْلِمُ مَنْ سَلِمَ المُسْلِمُونَ مِنْ لِسَانِهِ وَيَدِهِ رواه البخاري\n"
+            f"لقد بلغت شتائمك الـ ({current_count})! شتائم\n"
+            "هل ترضى لحسناتك أن تنقص لنطق ببعض الكلام الغير مفيد؟\n"
+            "استغفر الله العظيم ، استغفر الله العظيم، استغفر الله العظيم"
+        )
         
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -81,13 +97,11 @@ async def check_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode='HTML'
         )
         
-        # Send the sanitized message (without bad words)
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=sanitized_message,
             parse_mode='HTML'
         )
-
 
 async def filter_inappropriate_words_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Filter messages containing variations of banned words like 'قص'"""

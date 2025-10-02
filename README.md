@@ -68,7 +68,7 @@ Telegram-Bot/
    ```
 
 3. **Set up environment variables**
-   Create a `.env` file in the root directory:
+   Create a `.env` file in the root directory (or copy `.env.example` to `.env`):
    ```env
    # Telegram Bot Configuration
    BOT_TOKEN=your_bot_token_here
@@ -88,6 +88,9 @@ Telegram-Bot/
    # Bot Configuration
    LEBANON_TZ=Asia/Beirut
    AUTHORIZED_USERS=username1,username2,username3
+   
+   # Others
+   NEWS_API_KEY=your_news_api_key
    ```
 
 4. **Run the bot**
