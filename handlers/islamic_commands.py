@@ -11,7 +11,10 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from config import ALADHAN_API_BASE, ALQURAN_API_BASE, HADITH_API_BASE
-from data.islamic_data import ASMA_ALLAH, DHIKR_PHRASES
+from data.islamic_data import (
+    ASMA_ALLAH, DHIKR_PHRASES,
+    AQEEDAH_POINTS, SALAF_QUOTES, TAWHEED_CATEGORIES, SUNNAH_PRACTICES
+)
 
 logger = logging.getLogger(__name__)
 
@@ -258,3 +261,69 @@ async def dhikr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     phrase = random.choice(DHIKR_PHRASES)
     msg = f"🤲 ذكر\n\n{phrase}"
     await update.message.reply_text(msg)
+
+
+# ---------------------------------------------------------------------------
+# /aqeedah — Aqeedah of the Salaf
+# ---------------------------------------------------------------------------
+
+async def aqeedah(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send a random Aqeedah point from Ahlus Sunnah wal Jama'ah."""
+    topic, text, source = random.choice(AQEEDAH_POINTS)
+    msg = (
+        f"📗 من عقيدة السلف\n"
+        f"┄┄┄┄┄┄┄┄┄┄┄┄\n"
+        f"*{topic}*\n\n"
+        f"{text}\n\n"
+        f"📌 المصدر: _{source}_"
+    )
+    await update.message.reply_text(msg, parse_mode='Markdown')
+
+
+# ---------------------------------------------------------------------------
+# /salaf — Quotes from Salaf scholars
+# ---------------------------------------------------------------------------
+
+async def salaf_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send a random quote from a Salaf scholar."""
+    scholar, quote = random.choice(SALAF_QUOTES)
+    msg = (
+        f"📜 من كلام السلف\n"
+        f"┄┄┄┄┄┄┄┄┄┄┄┄\n"
+        f"{quote}\n\n"
+        f"— _{scholar}_"
+    )
+    await update.message.reply_text(msg, parse_mode='Markdown')
+
+
+# ---------------------------------------------------------------------------
+# /tawheed — The three categories of Tawheed
+# ---------------------------------------------------------------------------
+
+async def tawheed(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send a random category of Tawheed with explanation."""
+    category, explanation, daleel = random.choice(TAWHEED_CATEGORIES)
+    msg = (
+        f"☝️ التوحيد\n"
+        f"┄┄┄┄┄┄┄┄┄┄┄┄\n"
+        f"*{category}*\n\n"
+        f"{explanation}\n\n"
+        f"📖 الدليل:\n{daleel}"
+    )
+    await update.message.reply_text(msg, parse_mode='Markdown')
+
+
+# ---------------------------------------------------------------------------
+# /sunnah — Sunnah practices to revive
+# ---------------------------------------------------------------------------
+
+async def sunnah_practice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send a random Sunnah practice with its evidence."""
+    practice, evidence = random.choice(SUNNAH_PRACTICES)
+    msg = (
+        f"🌿 من السنن المهجورة\n"
+        f"┄┄┄┄┄┄┄┄┄┄┄┄\n"
+        f"*{practice}*\n\n"
+        f"الدليل: {evidence}"
+    )
+    await update.message.reply_text(msg, parse_mode='Markdown')

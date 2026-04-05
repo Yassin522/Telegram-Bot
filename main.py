@@ -48,7 +48,8 @@ from handlers.meme_handlers import (
 
 from handlers.islamic_commands import (
     prayer_times, quran_verse, hadith, hijri_date, asmaullah, dhikr,
-    set_schedule, unset_schedule
+    set_schedule, unset_schedule,
+    aqeedah, salaf_quote, tawheed, sunnah_practice
 )
 from handlers.scheduled_jobs import setup_scheduled_jobs
 
@@ -157,6 +158,11 @@ def setup_handlers(application):
     application.add_handler(CommandHandler('dhikr',         dhikr))
     application.add_handler(CommandHandler('setschedule',   set_schedule))
     application.add_handler(CommandHandler('unsetschedule', unset_schedule))
+    # Aqeedah of the Salaf
+    application.add_handler(CommandHandler('aqeedah',       aqeedah))
+    application.add_handler(CommandHandler('salaf',         salaf_quote))
+    application.add_handler(CommandHandler('tawheed',       tawheed))
+    application.add_handler(CommandHandler('sunnah',        sunnah_practice))
     
     # Message handling commands
     application.add_handler(CommandHandler('addkeyword', add_keyword_response))
@@ -233,6 +239,12 @@ API Commands:
 /dhikr - ذكر عشوائي
 /setschedule - تفعيل المنشورات اليومية في هذه المجموعة
 /unsetschedule - إيقاف المنشورات اليومية
+
+عقيدة السلف:
+/aqeedah - مسألة عقدية من عقيدة أهل السنة
+/salaf - قول من أقوال السلف الصالح
+/tawheed - من أنواع التوحيد وأدلتها
+/sunnah - سنة نبوية مع دليلها
 
 Insult Management (Authorized Users Only):
 /addinsult <word> - Add a new insult to the list
