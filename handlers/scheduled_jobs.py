@@ -5,13 +5,13 @@ import logging
 import random
 from datetime import time
 
-import aiohttp
+import aiohttp  # still used by job_quran_verse
 import pytz
 from telegram.ext import Application
 
-from config import ALQURAN_API_BASE, HADITH_API_BASE
+from config import ALQURAN_API_BASE
 from data.islamic_data import DHIKR_PHRASES, ISLAMIC_QUOTES, FAJR_REMINDERS, EVENING_REMINDERS
-from handlers.islamic_commands import get_scheduled_chats
+from handlers.islamic_commands import get_scheduled_chats, _fetch_random_hadith
 
 logger = logging.getLogger(__name__)
 BEIRUT_TZ = pytz.timezone('Asia/Beirut')
@@ -57,26 +57,10 @@ async def job_quran_verse(context) -> None:
 
 
 async def job_hadith(context) -> None:
-    """18:00 Beirut — Hadith of the day (Arabic text)."""
-    hadith_num = random.randint(1, 300)
-    url = f"{HADITH_API_BASE}/books/bukhari?range={hadith_num}-{hadith_num}"
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    hadiths = data.get('data', {}).get('hadiths', [])
-                    if hadiths:
-                        h = hadiths[0]
-                        num = h.get('number', hadith_num)
-                        text = (
-                            f"📚 حديث اليوم\n"
-                            f"صحيح البخاري — رقم {num}\n\n"
-                            f"{h['arab']}"
-                        )
-                        await _broadcast(context, text)
-    except Exception as e:
-        logger.error(f"job_hadith error: {e}")
+    """18:00 Beirut — Hadith of the day via sunnah.com API."""
+    text = await _fetch_random_hadith()
+    if text:
+        await _broadcast(context, text)
 
 
 async def job_evening_reminder(context) -> None:

@@ -10,7 +10,7 @@ import aiohttp
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from config import ALADHAN_API_BASE, ALQURAN_API_BASE, HADITH_API_BASE
+from config import ALADHAN_API_BASE, ALQURAN_API_BASE, SUNNAH_API_BASE, SUNNAH_API_KEY
 from data.islamic_data import (
     ASMA_ALLAH, DHIKR_PHRASES,
     AQEEDAH_POINTS, SALAF_QUOTES, TAWHEED_CATEGORIES, SUNNAH_PRACTICES
@@ -180,31 +180,50 @@ async def quran_verse(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------------------------------------------------------------------
 
 async def hadith(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Send a random hadith from Sahih Bukhari (Arabic text)."""
-    hadith_num = random.randint(1, 300)
-    url = f"{HADITH_API_BASE}/books/bukhari?range={hadith_num}-{hadith_num}"
+    """Send a random hadith from one of the major collections via sunnah.com API."""
+    result = await _fetch_random_hadith()
+    if result:
+        await update.message.reply_text(result)
+    else:
+        await update.message.reply_text("❌ تعذّر جلب الحديث. حاول لاحقاً.")
+
+
+# Major hadith collections available on sunnah.com
+_HADITH_COLLECTIONS = [
+    ("bukhari",   "صحيح البخاري"),
+    ("muslim",    "صحيح مسلم"),
+    ("abudawud",  "سنن أبي داود"),
+    ("tirmidhi",  "جامع الترمذي"),
+    ("nasai",     "سنن النسائي"),
+    ("ibnmajah",  "سنن ابن ماجه"),
+]
+
+
+async def _fetch_random_hadith() -> str | None:
+    """Fetch a random hadith from sunnah.com API. Returns formatted string or None."""
+    collection_id, collection_name = random.choice(_HADITH_COLLECTIONS)
+    url = f"{SUNNAH_API_BASE}/collections/{collection_id}/hadiths/random"
+    headers = {"X-API-Key": SUNNAH_API_KEY}
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    hadiths = data.get('data', {}).get('hadiths', [])
-                    if hadiths:
-                        h = hadiths[0]
-                        num = h.get('number', hadith_num)
-                        msg = (
+                    hadith_num = data.get('hadithNumber', '')
+                    # Find the Arabic body
+                    ar_body = next(
+                        (h['body'] for h in data.get('hadith', []) if h.get('lang') == 'ar'),
+                        None
+                    )
+                    if ar_body:
+                        return (
                             f"📚 حديث شريف\n"
-                            f"صحيح البخاري — رقم {num}\n\n"
-                            f"{h['arab']}"
+                            f"{collection_name} — رقم {hadith_num}\n\n"
+                            f"{ar_body}"
                         )
-                        await update.message.reply_text(msg)
-                    else:
-                        await update.message.reply_text("❌ لم يتم العثور على الحديث. حاول مجدداً.")
-                else:
-                    await update.message.reply_text("❌ تعذّر جلب الحديث. حاول لاحقاً.")
     except Exception as e:
-        logger.error(f"hadith error: {e}")
-        await update.message.reply_text("❌ حدث خطأ أثناء جلب الحديث.")
+        logger.error(f"_fetch_random_hadith error: {e}")
+    return None
 
 
 # ---------------------------------------------------------------------------
