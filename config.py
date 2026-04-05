@@ -33,6 +33,11 @@ OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
 LEBANON_TZ = os.getenv('LEBANON_TZ', 'Asia/Beirut')
 AUTHORIZED_USERS = set(filter(None, (os.getenv('AUTHORIZED_USERS', '').split(','))))
 
+# Islamic API endpoints
+ALADHAN_API_BASE = "https://api.aladhan.com/v1"
+ALQURAN_API_BASE = "https://api.alquran.cloud/v1"
+HADITH_API_BASE  = "https://api.hadith.gading.dev"
+
 # API Endpoints
 DOG_API = "https://dog.ceo/api/breeds/image/random"
 CAT_API = "https://api.thecatapi.com/v1/images/search"

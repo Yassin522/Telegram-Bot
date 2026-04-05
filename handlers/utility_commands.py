@@ -1,9 +1,8 @@
 """
 Utility command handlers
 """
-import asyncio
 import aiohttp
-from datetime import datetime
+from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import ContextTypes
 from config import LEBANON_TZ, WEATHER_EMOJIS, OPENWEATHER_API_KEY
@@ -59,8 +58,18 @@ async def poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_poll(question, options)
 
 
+async def _send_reminder(context) -> None:
+    """Job callback: sends the deferred reminder message."""
+    data = context.job.data
+    await context.bot.send_message(
+        chat_id=data['chat_id'],
+        text=f"⏰ Reminder for {data['mention']}:\n{data['text']}",
+        parse_mode='HTML'
+    )
+
+
 async def remind(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Set a reminder"""
+    """Set a reminder using job_queue."""
     if len(context.args) < 2:
         await update.message.reply_text(
             "Usage: /remind <minutes> <message>\n"
@@ -71,19 +80,21 @@ async def remind(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         minutes = int(context.args[0])
         message = ' '.join(context.args[1:])
-        
+
         if minutes <= 0:
             await update.message.reply_text("Please specify a positive number of minutes.")
             return
 
-        await update.message.reply_text(f"I'll remind you about '{message}' in {minutes} minutes!")
-        
-        await asyncio.sleep(minutes * 60)
-        await update.message.reply_text(
-            f"⏰ Reminder for {update.message.from_user.mention_html()}:\n"
-            f"{message}",
-            parse_mode='HTML'
+        context.job_queue.run_once(
+            _send_reminder,
+            when=timedelta(minutes=minutes),
+            data={
+                'chat_id': update.effective_chat.id,
+                'mention': update.message.from_user.mention_html(),
+                'text': message,
+            }
         )
+        await update.message.reply_text(f"I'll remind you about '{message}' in {minutes} minute(s)!")
     except ValueError:
         await update.message.reply_text("Please provide a valid number of minutes.")
 

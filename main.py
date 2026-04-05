@@ -46,6 +46,12 @@ from handlers.meme_handlers import (
     mardini_transform, text_to_speech, random_sticker
 )
 
+from handlers.islamic_commands import (
+    prayer_times, quran_verse, hadith, hijri_date, asmaullah, dhikr,
+    set_schedule, unset_schedule
+)
+from handlers.scheduled_jobs import setup_scheduled_jobs
+
 # Setup logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -141,6 +147,16 @@ def setup_handlers(application):
     
     # GIF and animation
     application.add_handler(CommandHandler('gif', random_gif))
+
+    # Islamic commands
+    application.add_handler(CommandHandler('prayer',        prayer_times))
+    application.add_handler(CommandHandler('quran',         quran_verse))
+    application.add_handler(CommandHandler('hadith',        hadith))
+    application.add_handler(CommandHandler('hijri',         hijri_date))
+    application.add_handler(CommandHandler('asmaullah',     asmaullah))
+    application.add_handler(CommandHandler('dhikr',         dhikr))
+    application.add_handler(CommandHandler('setschedule',   set_schedule))
+    application.add_handler(CommandHandler('unsetschedule', unset_schedule))
     
     # Message handling commands
     application.add_handler(CommandHandler('addkeyword', add_keyword_response))
@@ -208,6 +224,16 @@ API Commands:
 /crypto_price - Get cryptocurrency prices
 /chuck_norris - Get Chuck Norris facts
 
+الأوامر الإسلامية:
+/prayer <مدينة> - مواقيت الصلاة
+/quran - آية قرآنية عشوائية
+/hadith - حديث من صحيح البخاري
+/hijri - التاريخ الهجري اليوم
+/asmaullah - اسم عشوائي من أسماء الله الحسنى
+/dhikr - ذكر عشوائي
+/setschedule - تفعيل المنشورات اليومية في هذه المجموعة
+/unsetschedule - إيقاف المنشورات اليومية
+
 Insult Management (Authorized Users Only):
 /addinsult <word> - Add a new insult to the list
 /removeinsult <word> - Remove an insult from the list
@@ -231,7 +257,10 @@ def main():
         
         # Setup all handlers
         setup_handlers(application)
-        
+
+        # Setup scheduled Islamic posts
+        setup_scheduled_jobs(application)
+
         # Start the bot
         logger.info("Starting bot...")
         application.run_polling()
