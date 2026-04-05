@@ -141,9 +141,9 @@ cython_debug/
 # VS Code
 .vscode/
 
-# Data files
-data/insults.txt
-data/insult_counter.json
+# Data files (committed so Railway has them on startup)
+# data/insults.txt
+# data/insult_counter.json
 
 # Logs
 *.log
