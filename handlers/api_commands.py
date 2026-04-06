@@ -126,16 +126,6 @@ async def get_activity(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("Sorry, couldn't fetch an activity right now.")
 
 
-async def get_advice(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Get random advice"""
-    async with aiohttp.ClientSession() as session:
-        async with session.get(APIS['ADVICE_API']) as response:
-            if response.status == 200:
-                data = await response.json()
-                await update.message.reply_text(f"🤔 Advice:\n\n{data['slip']['advice']}")
-            else:
-                await update.message.reply_text("Sorry, couldn't fetch advice right now.")
-
 
 async def get_trivia(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Get a trivia question"""
@@ -265,38 +255,6 @@ async def get_iss_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("Sorry, couldn't fetch ISS location right now.")
 
 
-async def get_random_recipe(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Get a random recipe"""
-    async with aiohttp.ClientSession() as session:
-        async with session.get(APIS['RECIPE_API']) as response:
-            if response.status == 200:
-                data = await response.json()
-                meal = data['meals'][0]
-                
-                # Get ingredients list
-                ingredients = []
-                for i in range(1, 21):
-                    ingredient = meal[f'strIngredient{i}']
-                    measure = meal[f'strMeasure{i}']
-                    if ingredient and ingredient.strip():
-                        ingredients.append(f"• {measure} {ingredient}")
-                
-                message = f"🍳 {meal['strMeal']}\n\n"
-                message += f"Category: {meal['strCategory']}\n"
-                message += f"Cuisine: {meal['strArea']}\n\n"
-                message += "Ingredients:\n"
-                message += '\n'.join(ingredients)
-                message += f"\n\nInstructions:\n{meal['strInstructions']}"
-                
-                if meal['strMealThumb']:
-                    await update.message.reply_photo(meal['strMealThumb'], caption=message[:1024])
-                    if len(message) > 1024:
-                        await update.message.reply_text(message[1024:])
-                else:
-                    await update.message.reply_text(message)
-            else:
-                await update.message.reply_text("Sorry, couldn't fetch a recipe right now.")
-
 
 async def mistral_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /chat command to interact with Mistral LLM"""
@@ -338,24 +296,6 @@ async def mistral_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"An error occurred: {str(e)}")
 
-
-async def random_gif(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Fetch a random GIF based on search term"""
-    if not GIPHY_API_KEY:
-        await update.message.reply_text("GIPHY API key not configured!")
-        return
-    
-    search_term = " ".join(context.args) if context.args else "random"
-    url = f"https://api.giphy.com/v1/gifs/random?api_key={GIPHY_API_KEY}&tag={search_term}"
-    
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                data = await response.json()
-                gif_url = data['data']['images']['original']['url']
-                await update.message.reply_animation(gif_url)
-    except Exception as e:
-        await update.message.reply_text("Sorry, couldn't fetch a GIF right now!")
 
 
 async def nasa_pic(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -451,35 +391,6 @@ async def chuck_norris(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Error fetching joke!")
 
 
-async def urban_dict(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Look up word in Urban Dictionary"""
-    if not context.args:
-        await update.message.reply_text("📚 Usage: /urban_dict word")
-        return
-    
-    word = " ".join(context.args)
-    try:
-        async with aiohttp.ClientSession() as session:
-            url = f"https://api.urbandictionary.com/v0/define?term={quote(word)}"
-            async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    definitions = data.get('list', [])
-                    
-                    if definitions:
-                        definition = definitions[0]
-                        text = f"📚 **Urban Dictionary - {word.title()}**\n\n"
-                        text += f"**Definition:**\n{definition.get('definition', 'No definition')[:400]}...\n\n"
-                        text += f"**Example:**\n{definition.get('example', 'No example')[:200]}...\n\n"
-                        text += f"👍 {definition.get('thumbs_up', 0)} | 👎 {definition.get('thumbs_down', 0)}"
-                        
-                        await update.message.reply_text(text, parse_mode='Markdown')
-                    else:
-                        await update.message.reply_text(f"❌ No definition found for '{word}'")
-                else:
-                    await update.message.reply_text("❌ Could not access Urban Dictionary!")
-    except Exception as e:
-        await update.message.reply_text("❌ Error fetching definition!")
 
 
 async def color_palette(update: Update, context: ContextTypes.DEFAULT_TYPE):

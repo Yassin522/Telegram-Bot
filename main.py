@@ -15,10 +15,10 @@ from config import BOT_TOKEN
 # Import handlers
 from handlers.api_commands import (
     get_anime_quote, get_pokemon, get_quote,
-    get_activity, get_advice,
+    get_activity,
     get_number_fact, analyze_name, get_random_user, get_iss_location,
-    get_random_recipe, mistral_chat, random_gif,
-    useless_fact, urban_dict,
+    mistral_chat,
+    useless_fact,
     color_palette, bored_activity, programming_quote, dog_breed,
     get_random_word, get_drum_photo
 )
@@ -28,14 +28,11 @@ from handlers.message_handlers import (
     add_keyword_response, add_insult, show_leaderboard, recursive_command,
 )
 
-from handlers.meme_handlers import (
-    create_meme_custom, apply_filter,
-    mardini_transform, text_to_speech
-)
+from handlers.meme_handlers import text_to_speech
 
 from handlers.islamic_commands import (
     prayer_times, quran_verse, hadith, hijri_date, asmaullah, dhikr,
-    set_schedule, unset_schedule,
+    set_schedule, unset_schedule, test_schedule,
     aqeedah, salaf_quote, tawheed, sunnah_practice
 )
 from handlers.scheduled_jobs import setup_scheduled_jobs
@@ -57,30 +54,21 @@ def setup_handlers(application):
     )))
 
     # AI & general API commands
-    application.add_handler(CommandHandler('chat',           mistral_chat))
-    application.add_handler(CommandHandler('activity',       get_activity))
-    application.add_handler(CommandHandler('advice',         get_advice))
-    application.add_handler(CommandHandler('numberfact',     get_number_fact))
-    application.add_handler(CommandHandler('analyzename',    analyze_name))
-    application.add_handler(CommandHandler('randomuser',     get_random_user))
-    application.add_handler(CommandHandler('iss',            get_iss_location))
-    application.add_handler(CommandHandler('recipe',         get_random_recipe))
-    application.add_handler(CommandHandler('useless_fact',   useless_fact))
-    application.add_handler(CommandHandler('urban_dict',     urban_dict))
-    application.add_handler(CommandHandler('color_palette',  color_palette))
-    application.add_handler(CommandHandler('bored_activity', bored_activity))
+    application.add_handler(CommandHandler('chat',              mistral_chat))
+    application.add_handler(CommandHandler('activity',          get_activity))
+    application.add_handler(CommandHandler('numberfact',        get_number_fact))
+    application.add_handler(CommandHandler('analyzename',       analyze_name))
+    application.add_handler(CommandHandler('randomuser',        get_random_user))
+    application.add_handler(CommandHandler('iss',               get_iss_location))
+    application.add_handler(CommandHandler('useless_fact',      useless_fact))
+    application.add_handler(CommandHandler('color_palette',     color_palette))
+    application.add_handler(CommandHandler('bored_activity',    bored_activity))
     application.add_handler(CommandHandler('programming_quote', programming_quote))
-    application.add_handler(CommandHandler('mardono',        dog_breed))
-    application.add_handler(CommandHandler('randomword',     get_random_word))
-    application.add_handler(CommandHandler('gif',            random_gif))
-    application.add_handler(CommandHandler('Hamdi',          get_drum_photo))
-    application.add_handler(CommandHandler('Hamdi_d',        get_drum_photo))
-
-    # Image / media commands
-    application.add_handler(CommandHandler('meme',           create_meme_custom))
-    application.add_handler(CommandHandler('filter',         apply_filter))
-    application.add_handler(CommandHandler('speak',          text_to_speech))
-    application.add_handler(CommandHandler('mardinitransform', mardini_transform))
+    application.add_handler(CommandHandler('mardono',           dog_breed))
+    application.add_handler(CommandHandler('randomword',        get_random_word))
+    application.add_handler(CommandHandler('Hamdi',             get_drum_photo))
+    application.add_handler(CommandHandler('Hamdi_d',           get_drum_photo))
+    application.add_handler(CommandHandler('speak',             text_to_speech))
 
     # Islamic commands
     application.add_handler(CommandHandler('prayer',         prayer_times))
@@ -91,6 +79,7 @@ def setup_handlers(application):
     application.add_handler(CommandHandler('dhikr',          dhikr))
     application.add_handler(CommandHandler('setschedule',    set_schedule))
     application.add_handler(CommandHandler('unsetschedule',  unset_schedule))
+    application.add_handler(CommandHandler('testschedule',   test_schedule))
 
     # Aqeedah of the Salaf
     application.add_handler(CommandHandler('aqeedah',        aqeedah))
@@ -140,14 +129,16 @@ def setup_handlers(application):
 
 أوامر أخرى:
 /chat <سؤال> - محادثة مع الذكاء الاصطناعي
-/advice - نصيحة عشوائية
-/recipe - وصفة طعام عشوائية
-/gif [كلمة] - صورة متحركة
-/urban_dict <كلمة> - تعريف من Urban Dictionary
-/meme <رابط> '<نص علوي>' '<نص سفلي>' - إنشاء ميم
-/filter grayscale|sepia|blur - تطبيق فلتر على صورة
 /speak <نص> - تحويل نص إلى صوت
-/mardinitransform - تحويل صورة مارديني
+/activity - اقتراح نشاط
+/useless_fact - معلومة طريفة
+/color_palette - لوحة ألوان عشوائية
+/bored_activity - نشاط لطرد الملل
+/programming_quote - اقتباس برمجي
+/randomword - كلمة إنجليزية عشوائية
+/analyzename <اسم> - تحليل الاسم
+/randomuser - مستخدم عشوائي
+/iss - موقع محطة الفضاء الدولية
 
 إدارة المجموعة:
 /addkeyword <كلمة> <رد> - إضافة كلمة مفتاحية

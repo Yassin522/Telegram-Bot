@@ -63,6 +63,85 @@ def remove_scheduled_chat(chat_id: int) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# /testschedule — send all scheduled posts immediately to this chat (yaseen52 only)
+# ---------------------------------------------------------------------------
+
+async def test_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send all 7 scheduled posts immediately to this chat for testing (yaseen52 only)."""
+    if update.effective_user.username != 'yaseen52':
+        await update.message.reply_text("❌ هذا الأمر متاح فقط للمسؤول.")
+        return
+
+    chat_id = update.effective_chat.id
+    await update.message.reply_text("🔄 جاري إرسال جميع المنشورات اليومية للاختبار...")
+
+    from data.islamic_data import FAJR_REMINDERS, DHIKR_PHRASES, EVENING_REMINDERS, ISLAMIC_QUOTES
+    import aiohttp as _aiohttp
+    from config import ALQURAN_API_BASE as _QURAN_BASE
+
+    # 1. Fajr reminder
+    try:
+        text = f"{random.choice(FAJR_REMINDERS)}\n\n🤲 ذكر الصباح:\n{random.choice(DHIKR_PHRASES)}"
+        await context.bot.send_message(chat_id=chat_id, text=f"[06:00]\n{text}")
+    except Exception as e:
+        await context.bot.send_message(chat_id=chat_id, text=f"[06:00] ❌ {e}")
+
+    # 2. Hijri date
+    try:
+        hijri_text = await _fetch_hijri()
+        await context.bot.send_message(chat_id=chat_id, text=f"[07:00]\n{hijri_text or '❌ تعذّر الجلب'}")
+    except Exception as e:
+        await context.bot.send_message(chat_id=chat_id, text=f"[07:00] ❌ {e}")
+
+    # 3. Asmaullah
+    try:
+        name_ar, meaning_ar = random.choice(ASMA_ALLAH)
+        text = f"✨ من أسماء الله الحسنى\n\n{name_ar}\n\nالمعنى: {meaning_ar}"
+        await context.bot.send_message(chat_id=chat_id, text=f"[09:00]\n{text}")
+    except Exception as e:
+        await context.bot.send_message(chat_id=chat_id, text=f"[09:00] ❌ {e}")
+
+    # 4. Quran verse
+    try:
+        async with _aiohttp.ClientSession() as session:
+            async with session.get(f"{_QURAN_BASE}/ayah/random/quran-uthmani",
+                                   timeout=_aiohttp.ClientTimeout(total=10)) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    ayah = data['data']
+                    text = (f"📖 آية اليوم\n\n﴿{ayah['text']}﴾\n\n"
+                            f"— {ayah['surah']['name']}، الآية {ayah['numberInSurah']}")
+                    await context.bot.send_message(chat_id=chat_id, text=f"[12:00]\n{text}")
+                else:
+                    await context.bot.send_message(chat_id=chat_id, text="[12:00] ❌ API error")
+    except Exception as e:
+        await context.bot.send_message(chat_id=chat_id, text=f"[12:00] ❌ {e}")
+
+    # 5. Dhikr
+    try:
+        text = f"🤲 ذكر العصر\n\n{random.choice(DHIKR_PHRASES)}"
+        await context.bot.send_message(chat_id=chat_id, text=f"[15:00]\n{text}")
+    except Exception as e:
+        await context.bot.send_message(chat_id=chat_id, text=f"[15:00] ❌ {e}")
+
+    # 6. Hadith
+    try:
+        hadith_text = await _fetch_random_hadith()
+        await context.bot.send_message(chat_id=chat_id, text=f"[18:00]\n{hadith_text or '❌ تعذّر الجلب'}")
+    except Exception as e:
+        await context.bot.send_message(chat_id=chat_id, text=f"[18:00] ❌ {e}")
+
+    # 7. Evening reminder
+    try:
+        text = f"{random.choice(EVENING_REMINDERS)}\n\n{random.choice(ISLAMIC_QUOTES)}"
+        await context.bot.send_message(chat_id=chat_id, text=f"[21:00]\n{text}")
+    except Exception as e:
+        await context.bot.send_message(chat_id=chat_id, text=f"[21:00] ❌ {e}")
+
+    await update.message.reply_text("✅ اكتمل الاختبار.")
+
+
+# ---------------------------------------------------------------------------
 # /setschedule and /unsetschedule
 # ---------------------------------------------------------------------------
 
