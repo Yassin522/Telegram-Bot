@@ -15,11 +15,9 @@ from config import BOT_TOKEN
 # Import handlers
 from handlers.api_commands import (
     get_anime_quote, get_pokemon, get_quote,
-    get_activity,
-    get_number_fact, analyze_name, get_random_user, get_iss_location,
+    get_number_fact,
     mistral_chat,
-    useless_fact,
-    color_palette, bored_activity, programming_quote, dog_breed,
+    dog_breed,
     get_random_word, get_drum_photo
 )
 
@@ -55,15 +53,7 @@ def setup_handlers(application):
 
     # AI & general API commands
     application.add_handler(CommandHandler('chat',              mistral_chat))
-    application.add_handler(CommandHandler('activity',          get_activity))
     application.add_handler(CommandHandler('numberfact',        get_number_fact))
-    application.add_handler(CommandHandler('analyzename',       analyze_name))
-    application.add_handler(CommandHandler('randomuser',        get_random_user))
-    application.add_handler(CommandHandler('iss',               get_iss_location))
-    application.add_handler(CommandHandler('useless_fact',      useless_fact))
-    application.add_handler(CommandHandler('color_palette',     color_palette))
-    application.add_handler(CommandHandler('bored_activity',    bored_activity))
-    application.add_handler(CommandHandler('programming_quote', programming_quote))
     application.add_handler(CommandHandler('mardono',           dog_breed))
     application.add_handler(CommandHandler('randomword',        get_random_word))
     application.add_handler(CommandHandler('Hamdi',             get_drum_photo))
@@ -130,15 +120,7 @@ def setup_handlers(application):
 أوامر أخرى:
 /chat <سؤال> - محادثة مع الذكاء الاصطناعي
 /speak <نص> - تحويل نص إلى صوت
-/activity - اقتراح نشاط
-/useless_fact - معلومة طريفة
-/color_palette - لوحة ألوان عشوائية
-/bored_activity - نشاط لطرد الملل
-/programming_quote - اقتباس برمجي
 /randomword - كلمة إنجليزية عشوائية
-/analyzename <اسم> - تحليل الاسم
-/randomuser - مستخدم عشوائي
-/iss - موقع محطة الفضاء الدولية
 
 إدارة المجموعة:
 /addkeyword <كلمة> <رد> - إضافة كلمة مفتاحية

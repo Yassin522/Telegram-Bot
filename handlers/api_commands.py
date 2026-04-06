@@ -114,18 +114,6 @@ async def get_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("Sorry, couldn't fetch a quote right now.")
 
 
-async def get_activity(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Get a random activity suggestion"""
-    async with aiohttp.ClientSession() as session:
-        async with session.get(APIS['ACTIVITY_API']) as response:
-            if response.status == 200:
-                data = await response.json()
-                activity = f"🎯 Activity Suggestion:\n\n{data['activity']}\n\nType: {data['type'].capitalize()}\nParticipants: {data['participants']}"
-                await update.message.reply_text(activity)
-            else:
-                await update.message.reply_text("Sorry, couldn't fetch an activity right now.")
-
-
 
 async def get_trivia(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Get a trivia question"""
@@ -177,83 +165,6 @@ async def get_number_fact(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text(f"🔢 {fact}")
             else:
                 await update.message.reply_text("Sorry, couldn't fetch a number fact right now.")
-
-
-async def analyze_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Analyze a name for gender, age, and nationality"""
-    if not context.args:
-        await update.message.reply_text("Please provide a name!\nUsage: /analyzename John")
-        return
-    
-    name = context.args[0]
-    results = {}
-    
-    async with aiohttp.ClientSession() as session:
-        # Get gender prediction
-        async with session.get(f"{APIS['GENDER_API']}{name}") as response:
-            if response.status == 200:
-                data = await response.json()
-                results['gender'] = f"{data['gender']} ({data['probability']:.0%})"
-        
-        # Get age prediction
-        async with session.get(f"{APIS['AGE_API']}{name}") as response:
-            if response.status == 200:
-                data = await response.json()
-                results['age'] = data['age']
-        
-        # Get nationality prediction
-        async with session.get(f"{APIS['NATIONALITY_API']}{name}") as response:
-            if response.status == 200:
-                data = await response.json()
-                top_countries = data['country'][:3]
-                results['nationality'] = ', '.join([f"{c['country_id']} ({c['probability']:.0%})" for c in top_countries])
-    
-    message = f"📊 Analysis for '{name}':\n\n"
-    message += f"👤 Gender: {results.get('gender', 'Unknown')}\n"
-    message += f"🎂 Estimated Age: {results.get('age', 'Unknown')}\n"
-    message += f"🌍 Likely Nationalities: {results.get('nationality', 'Unknown')}"
-    
-    await update.message.reply_text(message)
-
-
-async def get_random_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Get information about a random user"""
-    async with aiohttp.ClientSession() as session:
-        async with session.get(APIS['USER_API']) as response:
-            if response.status == 200:
-                data = await response.json()
-                user = data['results'][0]
-                
-                message = "👤 Random User Profile:\n\n"
-                message += f"Name: {user['name']['title']} {user['name']['first']} {user['name']['last']}\n"
-                message += f"Gender: {user['gender'].capitalize()}\n"
-                message += f"Age: {user['dob']['age']}\n"
-                message += f"Location: {user['location']['city']}, {user['location']['country']}\n"
-                message += f"Email: {user['email']}\n"
-                
-                await update.message.reply_photo(user['picture']['large'], caption=message)
-            else:
-                await update.message.reply_text("Sorry, couldn't fetch a random user profile right now.")
-
-
-async def get_iss_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Get current location of the International Space Station"""
-    async with aiohttp.ClientSession() as session:
-        async with session.get(APIS['ISS_API']) as response:
-            if response.status == 200:
-                data = await response.json()
-                lat = float(data['iss_position']['latitude'])
-                lon = float(data['iss_position']['longitude'])
-                
-                message = "🛸 International Space Station Location:\n\n"
-                message += f"Latitude: {lat}\n"
-                message += f"Longitude: {lon}\n\n"
-                message += "View on map: https://www.google.com/maps?q={},{}".format(lat, lon)
-                
-                await update.message.reply_text(message)
-            else:
-                await update.message.reply_text("Sorry, couldn't fetch ISS location right now.")
-
 
 
 async def mistral_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -329,22 +240,6 @@ async def nasa_pic(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Error fetching NASA data!")
 
 
-async def useless_fact(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Get a random useless fact"""
-    try:
-        async with aiohttp.ClientSession() as session:
-            url = "https://uselessfacts.jsph.pl/random.json?language=en"
-            async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    fact = data.get('text', 'No fact available')
-                    await update.message.reply_text(f"🤓 **Random Useless Fact:**\n\n{fact}")
-                else:
-                    await update.message.reply_text("❌ Could not fetch a fact right now!")
-    except Exception as e:
-        await update.message.reply_text("❌ Error fetching fact!")
-
-
 async def crypto_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Get cryptocurrency prices"""
     if not context.args:
@@ -391,82 +286,6 @@ async def chuck_norris(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Error fetching joke!")
 
 
-
-
-async def color_palette(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Generate random color palette"""
-    try:
-        async with aiohttp.ClientSession() as session:
-            url = "http://colormind.io/api/"
-            data = {"model": "default"}
-            
-            async with session.post(url, json=data) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    colors = result.get('result', [])
-                    
-                    if colors:
-                        message = "🎨 **Random Color Palette:**\n\n"
-                        for i, color in enumerate(colors, 1):
-                            hex_color = '#{:02x}{:02x}{:02x}'.format(*color)
-                            rgb = f"RGB({color[0]}, {color[1]}, {color[2]})"
-                            message += f"**Color {i}:** {hex_color}\n{rgb}\n\n"
-                        
-                        await update.message.reply_text(message, parse_mode='Markdown')
-                    else:
-                        await update.message.reply_text("❌ Could not generate color palette!")
-                else:
-                    await update.message.reply_text("❌ Color service unavailable!")
-    except Exception as e:
-        await update.message.reply_text("❌ Error generating colors!")
-
-
-async def bored_activity(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Get activity suggestion when bored"""
-    try:
-        async with aiohttp.ClientSession() as session:
-            url = "https://www.boredapi.com/api/activity"
-            async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    
-                    activity = data.get('activity', 'No activity found')
-                    activity_type = data.get('type', 'Unknown').title()
-                    participants = data.get('participants', 1)
-                    price = data.get('price', 0)
-                    
-                    price_emoji = "💰" * int(price * 5) if price > 0 else "🆓"
-                    
-                    message = f"🎯 **Activity Suggestion:**\n\n"
-                    message += f"📝 **Activity:** {activity}\n"
-                    message += f"🏷️ **Type:** {activity_type}\n"
-                    message += f"👥 **Participants:** {participants}\n"
-                    message += f"💸 **Cost:** {price_emoji}"
-                    
-                    await update.message.reply_text(message, parse_mode='Markdown')
-                else:
-                    await update.message.reply_text("❌ Could not fetch activity suggestion!")
-    except Exception as e:
-        await update.message.reply_text("❌ Error fetching activity!")
-
-
-async def programming_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Get random programming quote"""
-    try:
-        async with aiohttp.ClientSession() as session:
-            url = "https://programming-quotes-api.herokuapp.com/Quotes/random"
-            async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    
-                    quote = data.get('en', 'No quote available')
-                    author = data.get('author', 'Unknown')
-                    
-                    await update.message.reply_text(f"{quote}")
-                else:
-                    await update.message.reply_text("❌ Could not fetch programming quote!")
-    except Exception as e:
-        await update.message.reply_text("❌ Error fetching quote!")
 
 
 async def dog_breed(update: Update, context: ContextTypes.DEFAULT_TYPE):
