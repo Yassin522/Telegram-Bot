@@ -16,20 +16,27 @@ HADITH_INDEX_FILE = Path(__file__).parent.parent / "data" / "hadith_book_index.j
 RENDER_DPI = 150
 
 
-def render_hadith_pages(hadith_num: int) -> list[BytesIO]:
-    """Render all pages for a hadith as a list of BytesIO JPEG images."""
+def render_hadith_pages(hadith_num: int) -> list[bytes]:
+    """Render all pages for a hadith as a list of raw JPEG bytes."""
     start, end = HADITH_PAGES[hadith_num]
     doc = fitz.open(PDF_PATH)
-    images = []
+    pages = []
     matrix = fitz.Matrix(RENDER_DPI / 72, RENDER_DPI / 72)
     for page_num in range(start - 1, end):  # fitz is 0-indexed
         page = doc[page_num]
-        pix = page.get_pixmap(matrix=matrix, alpha=False)
-        buf = BytesIO(pix.tobytes("jpeg", jpg_quality=85))
-        buf.seek(0)
-        images.append(buf)
+        pix = page.get_pixmap(matrix=matrix, alpha=False, colorspace=fitz.csRGB)
+        pages.append(pix.tobytes("jpeg"))
     doc.close()
-    return images
+    return pages
+
+
+def _build_media(pages: list[bytes], caption: str) -> list[InputMediaPhoto]:
+    """Wrap raw JPEG bytes in fresh BytesIO objects for a single send."""
+    media = []
+    for i, data in enumerate(pages):
+        buf = BytesIO(data)
+        media.append(InputMediaPhoto(media=buf, caption=caption if i == 0 else None))
+    return media
 
 
 def get_next_hadith_index() -> int:
@@ -61,10 +68,9 @@ async def hadith_book_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
 
     await update.message.reply_text(f"⏳ جارٍ تجهيز الحديث {num}...")
-    images = render_hadith_pages(num)
+    pages = render_hadith_pages(num)
     caption = f"📖 الحديث {num}: {HADITH_NAMES[num]}"
-    media = [InputMediaPhoto(media=img) for img in images]
-    media[0] = InputMediaPhoto(media=images[0], caption=caption)
+    media = _build_media(pages, caption)
 
     for i in range(0, len(media), 10):
         await update.message.reply_media_group(media=media[i:i + 10])
@@ -75,13 +81,12 @@ async def send_daily_hadith_book(context) -> None:
     from handlers.islamic_commands import get_scheduled_chats
 
     hadith_num = get_next_hadith_index()
-    images = render_hadith_pages(hadith_num)
+    pages = render_hadith_pages(hadith_num)
     caption = f"📖 الحديث {hadith_num}: {HADITH_NAMES[hadith_num]}"
-    media = [InputMediaPhoto(media=img) for img in images]
-    media[0] = InputMediaPhoto(media=images[0], caption=caption)
 
     for chat_id in get_scheduled_chats():
         try:
+            media = _build_media(pages, caption)  # fresh BytesIO per chat
             for i in range(0, len(media), 10):
                 await context.bot.send_media_group(chat_id=chat_id, media=media[i:i + 10])
         except Exception as e:
