@@ -107,6 +107,11 @@ async def job_evening_reminder(context) -> None:
     await _broadcast(context, text)
 
 
+async def job_3alayesh(context) -> None:
+    """Send 'عالايش' to all registered chats."""
+    await _broadcast(context, "عالايش")
+
+
 def setup_scheduled_jobs(application: Application) -> None:
     """Register all daily scheduled jobs. Called from main() before run_polling()."""
     jq = application.job_queue
@@ -125,4 +130,8 @@ def setup_scheduled_jobs(application: Application) -> None:
     jq.run_daily(job_hadith,           time=time(hour=18, minute=0,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_evening_reminder, time=time(hour=21, minute=0,  tzinfo=BEIRUT_TZ))
 
-    logger.info("7 scheduled Islamic jobs registered (Beirut timezone).")
+    # "عالايش" — 8 times between 09:00 and 16:00 (every hour)
+    for hour in range(9, 17):
+        jq.run_daily(job_3alayesh, time=time(hour=hour, minute=0, tzinfo=BEIRUT_TZ))
+
+    logger.info("Scheduled jobs registered: 7 Islamic + 8 × عالايش (Beirut timezone).")
