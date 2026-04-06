@@ -36,10 +36,7 @@ AUTHORIZED_USERS = set(filter(None, (os.getenv('AUTHORIZED_USERS', '').split(','
 # Islamic API endpoints
 ALADHAN_API_BASE = "https://api.aladhan.com/v1"
 ALQURAN_API_BASE = "https://api.alquran.cloud/v1"
-HADITH_API_BASE  = "https://api.hadith.gading.dev"   # legacy, still used as fallback
-SUNNAH_API_BASE  = "https://api.sunnah.com/v1"
-# Free demo key — get your own at https://api.sunnah.com
-SUNNAH_API_KEY   = os.getenv('SUNNAH_API_KEY', 'SqD712P3E82xnwOAEOkGd5JZH8s9wRR24TqNFzjk')
+HADITH_API_BASE  = "https://api.hadith.gading.dev"
 
 # API Endpoints
 DOG_API = "https://dog.ceo/api/breeds/image/random"

@@ -10,7 +10,7 @@ import aiohttp
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from config import ALADHAN_API_BASE, ALQURAN_API_BASE, SUNNAH_API_BASE, SUNNAH_API_KEY
+from config import ALADHAN_API_BASE, ALQURAN_API_BASE, HADITH_API_BASE
 from data.islamic_data import (
     ASMA_ALLAH, DHIKR_PHRASES,
     AQEEDAH_POINTS, SALAF_QUOTES, TAWHEED_CATEGORIES, SUNNAH_PRACTICES
@@ -180,7 +180,7 @@ async def quran_verse(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------------------------------------------------------------------
 
 async def hadith(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Send a random hadith from one of the major collections via sunnah.com API."""
+    """Send a random hadith from one of the major collections."""
     result = await _fetch_random_hadith()
     if result:
         await update.message.reply_text(result)
@@ -188,38 +188,34 @@ async def hadith(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ تعذّر جلب الحديث. حاول لاحقاً.")
 
 
-# Major hadith collections available on sunnah.com
-_HADITH_COLLECTIONS = [
-    ("bukhari",   "صحيح البخاري"),
-    ("muslim",    "صحيح مسلم"),
-    ("abudawud",  "سنن أبي داود"),
-    ("tirmidhi",  "جامع الترمذي"),
-    ("nasai",     "سنن النسائي"),
-    ("ibnmajah",  "سنن ابن ماجه"),
+# Major hadith collections on api.hadith.gading.dev with safe max ranges
+_HADITH_BOOKS = [
+    ("bukhari",   "صحيح البخاري",  300),
+    ("muslim",    "صحيح مسلم",     300),
+    ("abu-dawud", "سنن أبي داود",  300),
+    ("tirmidhi",  "جامع الترمذي",  300),
+    ("nasai",     "سنن النسائي",   300),
+    ("ibn-majah", "سنن ابن ماجه",  300),
 ]
 
 
 async def _fetch_random_hadith() -> str | None:
-    """Fetch a random hadith from sunnah.com API. Returns formatted string or None."""
-    collection_id, collection_name = random.choice(_HADITH_COLLECTIONS)
-    url = f"{SUNNAH_API_BASE}/collections/{collection_id}/hadiths/random"
-    headers = {"X-API-Key": SUNNAH_API_KEY}
+    """Fetch a random hadith from api.hadith.gading.dev. Returns formatted string or None."""
+    book_id, book_name, max_num = random.choice(_HADITH_BOOKS)
+    num = random.randint(1, max_num)
+    url = f"{HADITH_API_BASE}/books/{book_id}?range={num}-{num}"
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    hadith_num = data.get('hadithNumber', '')
-                    # Find the Arabic body
-                    ar_body = next(
-                        (h['body'] for h in data.get('hadith', []) if h.get('lang') == 'ar'),
-                        None
-                    )
-                    if ar_body:
+                    hadiths = data.get('data', {}).get('hadiths', [])
+                    if hadiths:
+                        h = hadiths[0]
                         return (
                             f"📚 حديث شريف\n"
-                            f"{collection_name} — رقم {hadith_num}\n\n"
-                            f"{ar_body}"
+                            f"{book_name} — رقم {h.get('number', num)}\n\n"
+                            f"{h['arab']}"
                         )
     except Exception as e:
         logger.error(f"_fetch_random_hadith error: {e}")
@@ -230,8 +226,8 @@ async def _fetch_random_hadith() -> str | None:
 # /hijri
 # ---------------------------------------------------------------------------
 
-async def hijri_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show the current Hijri date."""
+async def _fetch_hijri() -> str | None:
+    """Fetch today's Hijri date. Returns formatted string or None."""
     url = f"{ALADHAN_API_BASE}/timingsByCity?city=Mecca&country=SA&method=2"
     try:
         async with aiohttp.ClientSession() as session:
@@ -239,21 +235,23 @@ async def hijri_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if resp.status == 200:
                     data = await resp.json()
                     hijri = data['data']['date']['hijri']
-                    day = hijri['day']
-                    month_ar = hijri['month']['ar']
-                    year = hijri['year']
-                    weekday_ar = hijri['weekday']['ar']
-                    msg = (
+                    return (
                         f"📅 التاريخ الهجري اليوم\n\n"
-                        f"يوم {weekday_ar}\n"
-                        f"{day} {month_ar} {year} هـ"
+                        f"يوم {hijri['weekday']['ar']}\n"
+                        f"{hijri['day']} {hijri['month']['ar']} {hijri['year']} هـ"
                     )
-                    await update.message.reply_text(msg)
-                else:
-                    await update.message.reply_text("❌ تعذّر جلب التاريخ الهجري.")
     except Exception as e:
-        logger.error(f"hijri_date error: {e}")
-        await update.message.reply_text("❌ حدث خطأ أثناء جلب التاريخ.")
+        logger.error(f"_fetch_hijri error: {e}")
+    return None
+
+
+async def hijri_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show the current Hijri date."""
+    msg = await _fetch_hijri()
+    if msg:
+        await update.message.reply_text(msg)
+    else:
+        await update.message.reply_text("❌ تعذّر جلب التاريخ الهجري.")
 
 
 # ---------------------------------------------------------------------------

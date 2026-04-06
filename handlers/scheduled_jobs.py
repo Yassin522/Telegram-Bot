@@ -1,17 +1,28 @@
 """
 Scheduled daily Islamic auto-post jobs.
+
+Daily schedule (Beirut timezone):
+  06:00 — Fajr reminder + morning dhikr
+  07:00 — Hijri date
+  09:00 — Name from 99 Names of Allah (Asmaullah)
+  12:00 — Quran verse of the day
+  15:00 — Dhikr (afternoon)
+  18:00 — Hadith of the day
+  21:00 — Evening reminder + Islamic quote
 """
 import logging
 import random
 from datetime import time
 
-import aiohttp  # still used by job_quran_verse
+import aiohttp
 import pytz
 from telegram.ext import Application
 
 from config import ALQURAN_API_BASE
-from data.islamic_data import DHIKR_PHRASES, ISLAMIC_QUOTES, FAJR_REMINDERS, EVENING_REMINDERS
-from handlers.islamic_commands import get_scheduled_chats, _fetch_random_hadith
+from data.islamic_data import (
+    ASMA_ALLAH, DHIKR_PHRASES, ISLAMIC_QUOTES, FAJR_REMINDERS, EVENING_REMINDERS
+)
+from handlers.islamic_commands import get_scheduled_chats, _fetch_random_hadith, _fetch_hijri
 
 logger = logging.getLogger(__name__)
 BEIRUT_TZ = pytz.timezone('Asia/Beirut')
@@ -27,15 +38,33 @@ async def _broadcast(context, text: str) -> None:
 
 
 async def job_fajr_reminder(context) -> None:
-    """06:00 Beirut — Morning Fajr reminder + dhikr."""
+    """06:00 — Morning Fajr reminder + dhikr."""
     reminder = random.choice(FAJR_REMINDERS)
-    dhikr = random.choice(DHIKR_PHRASES)
-    text = f"{reminder}\n\n🤲 ذكر الصباح:\n{dhikr}"
+    phrase = random.choice(DHIKR_PHRASES)
+    text = f"{reminder}\n\n🤲 ذكر الصباح:\n{phrase}"
+    await _broadcast(context, text)
+
+
+async def job_hijri(context) -> None:
+    """07:00 — Today's Hijri date."""
+    text = await _fetch_hijri()
+    if text:
+        await _broadcast(context, text)
+
+
+async def job_asmaullah(context) -> None:
+    """09:00 — Random name from the 99 Names of Allah."""
+    name_ar, meaning_ar = random.choice(ASMA_ALLAH)
+    text = (
+        f"✨ من أسماء الله الحسنى\n\n"
+        f"{name_ar}\n\n"
+        f"المعنى: {meaning_ar}"
+    )
     await _broadcast(context, text)
 
 
 async def job_quran_verse(context) -> None:
-    """12:00 Beirut — Quran verse of the day (Arabic only)."""
+    """12:00 — Quran verse of the day (Arabic only)."""
     url = f"{ALQURAN_API_BASE}/ayah/random/quran-uthmani"
     try:
         async with aiohttp.ClientSession() as session:
@@ -56,15 +85,22 @@ async def job_quran_verse(context) -> None:
         logger.error(f"job_quran_verse error: {e}")
 
 
+async def job_dhikr(context) -> None:
+    """15:00 — Afternoon dhikr."""
+    phrase = random.choice(DHIKR_PHRASES)
+    text = f"🤲 ذكر العصر\n\n{phrase}"
+    await _broadcast(context, text)
+
+
 async def job_hadith(context) -> None:
-    """18:00 Beirut — Hadith of the day via sunnah.com API."""
+    """18:00 — Hadith of the day."""
     text = await _fetch_random_hadith()
     if text:
         await _broadcast(context, text)
 
 
 async def job_evening_reminder(context) -> None:
-    """21:00 Beirut — Evening Islamic reminder."""
+    """21:00 — Evening Islamic reminder + quote."""
     reminder = random.choice(EVENING_REMINDERS)
     quote = random.choice(ISLAMIC_QUOTES)
     text = f"{reminder}\n\n{quote}"
@@ -82,8 +118,11 @@ def setup_scheduled_jobs(application: Application) -> None:
         return
 
     jq.run_daily(job_fajr_reminder,    time=time(hour=6,  minute=0,  tzinfo=BEIRUT_TZ))
+    jq.run_daily(job_hijri,            time=time(hour=7,  minute=0,  tzinfo=BEIRUT_TZ))
+    jq.run_daily(job_asmaullah,        time=time(hour=9,  minute=0,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_quran_verse,      time=time(hour=12, minute=0,  tzinfo=BEIRUT_TZ))
+    jq.run_daily(job_dhikr,            time=time(hour=15, minute=0,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_hadith,           time=time(hour=18, minute=0,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_evening_reminder, time=time(hour=21, minute=0,  tzinfo=BEIRUT_TZ))
 
-    logger.info("Scheduled Islamic jobs registered (Beirut timezone).")
+    logger.info("7 scheduled Islamic jobs registered (Beirut timezone).")
