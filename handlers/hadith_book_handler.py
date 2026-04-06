@@ -24,7 +24,7 @@ def render_hadith_pages(hadith_num: int) -> list[BytesIO]:
     matrix = fitz.Matrix(RENDER_DPI / 72, RENDER_DPI / 72)
     for page_num in range(start - 1, end):  # fitz is 0-indexed
         page = doc[page_num]
-        pix = page.get_pixmap(matrix=matrix)
+        pix = page.get_pixmap(matrix=matrix, alpha=False)
         buf = BytesIO(pix.tobytes("jpeg", jpg_quality=85))
         buf.seek(0)
         images.append(buf)
