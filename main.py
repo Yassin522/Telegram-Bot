@@ -58,9 +58,6 @@ def setup_handlers(application):
 
     # AI & general API commands
     application.add_handler(CommandHandler('chat',           mistral_chat))
-    application.add_handler(CommandHandler('anime',          get_anime_quote))
-    application.add_handler(CommandHandler('pokemon',        get_pokemon))
-    application.add_handler(CommandHandler('quote',          get_quote))
     application.add_handler(CommandHandler('activity',       get_activity))
     application.add_handler(CommandHandler('advice',         get_advice))
     application.add_handler(CommandHandler('numberfact',     get_number_fact))
@@ -143,9 +140,6 @@ def setup_handlers(application):
 
 أوامر أخرى:
 /chat <سؤال> - محادثة مع الذكاء الاصطناعي
-/anime - اقتباس من أنمي
-/pokemon <اسم> - معلومات عن بوكيمون
-/quote - اقتباس عشوائي
 /advice - نصيحة عشوائية
 /recipe - وصفة طعام عشوائية
 /gif [كلمة] - صورة متحركة
