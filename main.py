@@ -35,6 +35,7 @@ from handlers.islamic_commands import (
 )
 from handlers.scheduled_jobs import setup_scheduled_jobs
 from handlers.hadith_book_handler import hadith_book_command
+from handlers.aqeedah_book_handler import aqeedah_book_command
 
 # Setup logging
 logging.basicConfig(
@@ -78,6 +79,7 @@ def setup_handlers(application):
     application.add_handler(CommandHandler('tawheed',        tawheed))
     application.add_handler(CommandHandler('sunnah',         sunnah_practice))
     application.add_handler(CommandHandler('hadith_book',    hadith_book_command))
+    application.add_handler(CommandHandler('aqeedah_book',   aqeedah_book_command))
 
     # Group management commands
     application.add_handler(CommandHandler('addkeyword',     add_keyword_response))
