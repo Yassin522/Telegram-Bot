@@ -39,7 +39,7 @@ from handlers.api_commands import (
 from handlers.message_handlers import (
     respond_to_keywords, check_message, filter_inappropriate_words_handler,
     add_keyword_response, add_insult, show_leaderboard, recursive_command,
-)
+)  # filter_inappropriate_words_handler is registered in group=2
 
 from handlers.meme_handlers import (
     makememe, templates, create_meme_custom, apply_filter,
@@ -171,9 +171,10 @@ def setup_handlers(application):
     application.add_handler(CommandHandler('recursive', recursive_command))
     
     
-    # Message handlers (for text messages)
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_message))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, respond_to_keywords))
+    # Message handlers — separate groups so both always run
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_message), group=0)
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, respond_to_keywords), group=1)
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, filter_inappropriate_words_handler), group=2)
     
     # Help command
     application.add_handler(CommandHandler('help', lambda u, c: u.message.reply_text(

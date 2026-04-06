@@ -36,11 +36,13 @@ def build_insult_pattern(insult: str) -> re.Pattern:
 
 async def respond_to_keywords(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Message handler for keyword responses"""
-    message_text = update.message.text.lower()
+    if not update.message or not update.message.text:
+        return
+    message_text = normalize_arabic(update.message.text.lower())
     for keyword, response in KEYWORD_RESPONSES.items():
-        if message_text.strip() == keyword:
+        if keyword in message_text:
             await update.message.reply_text(response)
-            return  # Stop checking after the first match
+            return
 
 
 async def check_message(update: Update, context: ContextTypes.DEFAULT_TYPE):

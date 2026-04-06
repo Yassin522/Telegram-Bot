@@ -12,8 +12,6 @@ from config import (
     JIKAN_API_BASE, WAIFU_API, APIS, MISTRAL_API_KEY, GIPHY_API_KEY,
     UNSPLASH_ACCESS_KEY
 )
-import requests
-
 
 async def get_random_dog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a random dog image"""
@@ -327,14 +325,15 @@ async def mistral_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "max_tokens": 300
         }
         
-        response = requests.post(url, headers=headers, json=payload)
-        
-        if response.status_code == 200:
-            result = response.json()
-            generated_text = result['choices'][0]['message']['content']
-            await update.message.reply_text(generated_text)
-        else:
-            await update.message.reply_text(f"Sorry, there was an API error: {response.text}")
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    generated_text = result['choices'][0]['message']['content']
+                    await update.message.reply_text(generated_text)
+                else:
+                    error_text = await response.text()
+                    await update.message.reply_text(f"Sorry, there was an API error: {error_text}")
     
     except Exception as e:
         await update.message.reply_text(f"An error occurred: {str(e)}")
@@ -350,10 +349,11 @@ async def random_gif(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = f"https://api.giphy.com/v1/gifs/random?api_key={GIPHY_API_KEY}&tag={search_term}"
     
     try:
-        response = requests.get(url)
-        data = response.json()
-        gif_url = data['data']['images']['original']['url']
-        await update.message.reply_animation(gif_url)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                data = await response.json()
+                gif_url = data['data']['images']['original']['url']
+                await update.message.reply_animation(gif_url)
     except Exception as e:
         await update.message.reply_text("Sorry, couldn't fetch a GIF right now!")
 
