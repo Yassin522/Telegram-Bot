@@ -87,7 +87,10 @@ async def set_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def unset_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Unregister the current chat from daily Islamic auto-posts."""
+    """Unregister the current chat from daily Islamic auto-posts (yaseen52 only)."""
+    if update.effective_user.username != 'yaseen52':
+        await update.message.reply_text("❌ هذا الأمر متاح فقط للمسؤول.")
+        return
     chat_id = update.effective_chat.id
     if remove_scheduled_chat(chat_id):
         await update.message.reply_text("❌ تم إيقاف المنشورات اليومية الإسلامية في هذه المجموعة.")

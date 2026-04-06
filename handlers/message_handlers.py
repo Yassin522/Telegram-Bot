@@ -38,9 +38,9 @@ async def respond_to_keywords(update: Update, context: ContextTypes.DEFAULT_TYPE
     """Message handler for keyword responses"""
     if not update.message or not update.message.text:
         return
-    message_text = normalize_arabic(update.message.text.lower())
+    message_text = normalize_arabic(update.message.text.strip().lower())
     for keyword, response in KEYWORD_RESPONSES.items():
-        if keyword in message_text:
+        if message_text == keyword:
             await update.message.reply_text(response)
             return
 
