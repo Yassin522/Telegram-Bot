@@ -4,6 +4,7 @@ Main entry point for the Telegram Bot
 import logging
 from telegram.ext import (
     ApplicationBuilder,
+    CallbackQueryHandler,
     ChatMemberHandler,
     CommandHandler,
     MessageHandler,
@@ -38,6 +39,7 @@ from handlers.islamic_commands import (
 from handlers.scheduled_jobs import setup_scheduled_jobs
 from handlers.hadith_book_handler import hadith_book_command
 from handlers.aqeedah_book_handler import aqeedah_book_command
+from handlers.admin_commands import sendto_command, sendto_callback
 
 # Setup logging
 logging.basicConfig(
@@ -82,6 +84,10 @@ def setup_handlers(application):
     application.add_handler(CommandHandler('sunnah',         sunnah_practice))
     application.add_handler(CommandHandler('hadith_book',    hadith_book_command))
     application.add_handler(CommandHandler('aqeedah_book',   aqeedah_book_command))
+
+    # Admin commands
+    application.add_handler(CommandHandler('sendto', sendto_command))
+    application.add_handler(CallbackQueryHandler(sendto_callback, pattern=r'^sendto_'))
 
     # Group management commands
     application.add_handler(CommandHandler('addkeyword',     add_keyword_response))
