@@ -147,11 +147,6 @@ def setup_scheduled_jobs(application: Application) -> None:
 
     jq.run_daily(job_dhikr,            time=time(hour=15, minute=0,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_dhikr,            time=time(hour=16, minute=0,  tzinfo=BEIRUT_TZ))
-    jq.run_daily(job_dhikr,            time=time(hour=17, minute=0,  tzinfo=BEIRUT_TZ))
-    jq.run_daily(job_dhikr,            time=time(hour=18, minute=0,  tzinfo=BEIRUT_TZ))
-    jq.run_daily(job_dhikr,            time=time(hour=19, minute=0,  tzinfo=BEIRUT_TZ))
-    jq.run_daily(job_dhikr,            time=time(hour=22, minute=34,  tzinfo=BEIRUT_TZ))
-    jq.run_daily(job_dhikr,            time=time(hour=23, minute=0,  tzinfo=BEIRUT_TZ))
 
     jq.run_daily(job_hadith,           time=time(hour=18, minute=0,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_evening_reminder, time=time(hour=21, minute=0,  tzinfo=BEIRUT_TZ))
