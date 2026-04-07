@@ -4,6 +4,7 @@ Main entry point for the Telegram Bot
 import logging
 from telegram.ext import (
     ApplicationBuilder,
+    ChatMemberHandler,
     CommandHandler,
     MessageHandler,
     filters
@@ -31,7 +32,8 @@ from handlers.meme_handlers import text_to_speech
 from handlers.islamic_commands import (
     prayer_times, quran_verse, hadith, hijri_date, asmaullah, dhikr,
     set_schedule, unset_schedule, test_schedule,
-    aqeedah, salaf_quote, tawheed, sunnah_practice
+    aqeedah, salaf_quote, tawheed, sunnah_practice,
+    auto_register_chat, handle_bot_added,
 )
 from handlers.scheduled_jobs import setup_scheduled_jobs
 from handlers.hadith_book_handler import hadith_book_command
@@ -86,6 +88,10 @@ def setup_handlers(application):
     application.add_handler(CommandHandler('addinsult',      add_insult))
     application.add_handler(CommandHandler('leaderboard',    show_leaderboard))
     application.add_handler(CommandHandler('recursive',      recursive_command))
+
+    # Auto-register any chat the bot receives a message in
+    application.add_handler(MessageHandler(filters.ALL, auto_register_chat), group=-1)
+    application.add_handler(ChatMemberHandler(handle_bot_added, ChatMemberHandler.MY_CHAT_MEMBER))
 
     # Message handlers — separate groups so all three always run
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_message), group=0)

@@ -426,3 +426,19 @@ async def sunnah_practice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"الدليل: {evidence}"
     )
     await update.message.reply_text(msg, parse_mode='Markdown')
+
+
+async def auto_register_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Silently register any chat that the bot receives a message in."""
+    chat_id = update.effective_chat.id
+    add_scheduled_chat(chat_id)
+
+
+async def handle_bot_added(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Auto-register when the bot is added to a new group."""
+    my_id = context.bot.id
+    new_member = update.my_chat_member.new_chat_member
+    if new_member.user.id == my_id and new_member.status in ("member", "administrator"):
+        chat_id = update.effective_chat.id
+        add_scheduled_chat(chat_id)
+        logger.info(f"Auto-registered new chat: {chat_id}")
