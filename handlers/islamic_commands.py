@@ -19,6 +19,7 @@ from data.islamic_data import (
 logger = logging.getLogger(__name__)
 
 SCHEDULE_CHATS_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'schedule_chats.json')
+KNOWN_GROUPS_FILE   = os.path.join(os.path.dirname(__file__), '..', 'data', 'known_groups.json')
 
 
 # ---------------------------------------------------------------------------
@@ -428,10 +429,39 @@ async def sunnah_practice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg, parse_mode='Markdown')
 
 
+def _load_known_groups() -> list:
+    try:
+        with open(KNOWN_GROUPS_FILE, 'r') as f:
+            return json.load(f).get('groups', [])
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def _save_known_groups(groups: list) -> None:
+    with open(KNOWN_GROUPS_FILE, 'w') as f:
+        json.dump({'groups': groups}, f)
+
+
+def register_known_group(chat_id: int) -> None:
+    """Track any group/supergroup the bot is active in."""
+    groups = _load_known_groups()
+    if chat_id not in groups:
+        groups.append(chat_id)
+        _save_known_groups(groups)
+
+
+def get_known_groups() -> list:
+    return _load_known_groups()
+
+
 async def auto_register_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Silently register any chat that the bot receives a message in."""
-    chat_id = update.effective_chat.id
-    add_scheduled_chat(chat_id)
+    chat = update.effective_chat
+    if chat is None:
+        return
+    add_scheduled_chat(chat.id)
+    if chat.type in ("group", "supergroup"):
+        register_known_group(chat.id)
 
 
 async def handle_bot_added(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -441,4 +471,5 @@ async def handle_bot_added(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     if new_member.user.id == my_id and new_member.status in ("member", "administrator"):
         chat_id = update.effective_chat.id
         add_scheduled_chat(chat_id)
+        register_known_group(chat_id)
         logger.info(f"Auto-registered new chat: {chat_id}")

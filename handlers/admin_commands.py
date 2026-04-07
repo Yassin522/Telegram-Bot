@@ -6,7 +6,7 @@ import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-from handlers.islamic_commands import get_scheduled_chats
+from handlers.islamic_commands import get_known_groups
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +32,12 @@ async def sendto_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         )
         return
 
-    chat_ids = get_scheduled_chats()
+    chat_ids = get_known_groups()
     if not chat_ids:
-        await update.message.reply_text("لا يوجد أي chat مسجّل حتى الآن.")
+        await update.message.reply_text(
+            "⚠️ البوت مش شايف أي مجموعة لحتى الآن.\n"
+            "تأكد إنو البوت استقبل رسالة بالمجموعات، أو أرسل أي رسالة بكل مجموعة لتسجيلها."
+        )
         return
 
     # Fetch title for each registered chat
@@ -80,7 +83,7 @@ async def sendto_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     target = data[len("sendto_"):]  # "<chat_id>" or "all"
 
     if target == "all":
-        chat_ids = get_scheduled_chats()
+        chat_ids = get_known_groups()
         sent, failed = 0, 0
         for chat_id in chat_ids:
             try:
