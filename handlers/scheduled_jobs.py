@@ -124,7 +124,7 @@ def setup_scheduled_jobs(application: Application) -> None:
         )
         return
 
-    jq.run_daily(job_fajr_reminder,    time=time(hour=6,  minute=0,  tzinfo=BEIRUT_TZ))
+    jq.run_daily(job_fajr_reminder,    time=time(hour=5,  minute=0,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_hijri,            time=time(hour=7,  minute=0,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_asmaullah,        time=time(hour=9,  minute=0,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_quran_verse,      time=time(hour=12, minute=0,  tzinfo=BEIRUT_TZ))
@@ -135,7 +135,7 @@ def setup_scheduled_jobs(application: Application) -> None:
     jq.run_daily(send_daily_aqeedah_book, time=time(hour=19, minute=0,  tzinfo=BEIRUT_TZ))
 
     # "عالايش" — 8 times between 09:00 and 16:00 (every hour)
-    for hour in range(9, 17):
+    for hour in range(9, 21):
         jq.run_daily(job_3alayesh, time=time(hour=hour, minute=0, tzinfo=BEIRUT_TZ))
 
     logger.info("Scheduled jobs registered: 7 Islamic + hadith book (20:00) + 8 × عالايش (Beirut timezone).")
