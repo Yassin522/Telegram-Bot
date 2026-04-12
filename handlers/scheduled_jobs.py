@@ -134,10 +134,10 @@ def setup_scheduled_jobs(application: Application) -> None:
     jq.run_daily(job_fajr_reminder,    time=time(hour=5,  minute=0,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_hijri,            time=time(hour=7,  minute=0,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_asmaullah,        time=time(hour=9,  minute=0,  tzinfo=BEIRUT_TZ))
-    jq.run_daily(job_asmaullah,        time=time(hour=10,  minute=0,  tzinfo=BEIRUT_TZ))
-    jq.run_daily(job_asmaullah,        time=time(hour=11,  minute=30,  tzinfo=BEIRUT_TZ))
-    jq.run_daily(job_asmaullah,        time=time(hour=12,  minute=40,  tzinfo=BEIRUT_TZ))
-    jq.run_daily(job_asmaullah,        time=time(hour=15,  minute=50,  tzinfo=BEIRUT_TZ))
+    # jq.run_daily(job_asmaullah,        time=time(hour=10,  minute=0,  tzinfo=BEIRUT_TZ))
+    # jq.run_daily(job_asmaullah,        time=time(hour=11,  minute=30,  tzinfo=BEIRUT_TZ))
+    # jq.run_daily(job_asmaullah,        time=time(hour=12,  minute=40,  tzinfo=BEIRUT_TZ))
+    # jq.run_daily(job_asmaullah,        time=time(hour=15,  minute=50,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_asmaullah,        time=time(hour=17,  minute=33,  tzinfo=BEIRUT_TZ))
 
     jq.run_daily(job_quran_verse,      time=time(hour=12, minute=0,  tzinfo=BEIRUT_TZ))
@@ -151,8 +151,8 @@ def setup_scheduled_jobs(application: Application) -> None:
     jq.run_daily(job_evening_reminder, time=time(hour=21, minute=0,  tzinfo=BEIRUT_TZ))
     jq.run_daily(job_evening_reminder, time=time(hour=22, minute=0,  tzinfo=BEIRUT_TZ))
 
-    jq.run_daily(send_daily_hadith_book,  time=time(hour=20, minute=0,  tzinfo=BEIRUT_TZ))
-    jq.run_daily(send_daily_aqeedah_book, time=time(hour=19, minute=0,  tzinfo=BEIRUT_TZ))
+    # jq.run_daily(send_daily_hadith_book,  time=time(hour=20, minute=0,  tzinfo=BEIRUT_TZ))
+    # jq.run_daily(send_daily_aqeedah_book, time=time(hour=19, minute=0,  tzinfo=BEIRUT_TZ))
     # for hour in (17, 22):
     #     jq.run_daily(job_omar_roast, time=time(hour=hour, minute=0, tzinfo=BEIRUT_TZ))
 
